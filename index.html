@@ -21,31 +21,50 @@
     </div>
   </div>
   <script>
-
   var client_id = '331691048436-q1g7qk6qf50hvg896regfa2pdv0n1q6h.apps.googleusercontent.com';
   var scopes = ['https://mail.google.com/', 'https://www.googleapis.com/auth/plus.me'];
+  var nextPage = '-1';
+  var access_token = '';
+
+  $(window).scroll(function() {
+    if($(window).scrollTop() + $(window).height() >= $(document).height() - 20) {
+      makeMessage();
+    }
+  });
 
   function OnLoadCallback(){
     $('#login-btn').hide();
     $('#message').hide();
     checkAuth();
   }
+
   function checkAuth() {
     gapi.auth.authorize({client_id: client_id, scope: scopes, immediate: true}, result);
   }
+
   function Auth(event){
     gapi.auth.authorize({client_id: client_id, scope: scopes, immediate: false}, result);
   }
+
   function result(res){
     if(res && !res.error){
       $('#login-btn').hide();
       $('#message').show();
-      var access_token = res.access_token;
+      access_token = res.access_token;
+      makeMessage();
+    }else{
+        $('#login-btn').show();
+        $('#message').hide();
+    }
+  }
+
+  function makeMessage(){
+    if (typeof nextPage != 'undefined'){
       $.ajax({
         type: "GET",
-        url: "/inbox/"+access_token
+        url: "/inbox/"+access_token+"/"+nextPage
       }).done(function(data){
-        data.forEach(function(item){
+        data.list.forEach(function(item){
           getMessage('me', item, function(res){
             var html = '<tr><td>';
             var header = res.payload.headers;
@@ -60,12 +79,11 @@
             $(".table").append(html);
           });
         });
+        nextPage = data.nextPage;
       });
-    }else{
-        $('#login-btn').show();
-        $('#message').hide();
     }
   }
+
   function getMessage(userId, messageId, callback) {
     gapi.client.load('gmail', 'v1').then(function(){
       var request = gapi.client.gmail.users.messages.get({
