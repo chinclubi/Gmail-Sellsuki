@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Gmail API - Sellsuki</title>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"></link>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h4>Gmail API - Sellsuki <small>v0.0.1</small></h4>
+  </div>
+    <div class="text-center">
+      <button id="login-btn" class="btn btn-danger" onclick="Auth()">Login with Gmail</button>
+    </div>
+    <div id="message" class="panel panel-info">
+      <div class="panel-heading">Message</div>
+      <table class="table">
+      </table>
+    </div>
+  </div>
+  <script>
+
+  var client_id = '331691048436-q1g7qk6qf50hvg896regfa2pdv0n1q6h.apps.googleusercontent.com';
+  var scopes = ['https://mail.google.com/', 'https://www.googleapis.com/auth/plus.me'];
+
+  function OnLoadCallback(){
+    $('#login-btn').hide();
+    $('#message').hide();
+    checkAuth();
+  }
+  function checkAuth() {
+    gapi.auth.authorize({client_id: client_id, scope: scopes, immediate: true}, result);
+  }
+  function Auth(event){
+    gapi.auth.authorize({client_id: client_id, scope: scopes, immediate: false}, result);
+  }
+  function result(res){
+    if(res && !res.error){
+      $('#login-btn').hide();
+      $('#message').show();
+      var access_token = res.access_token;
+      $.ajax({
+        type: "GET",
+        url: "/inbox/"+access_token
+      }).done(function(data){
+        data.forEach(function(item){
+          getMessage('me', item, function(res){
+            var html = '<tr><td>';
+            var header = res.payload.headers;
+            for(var i=0;i<header.length;i++){
+              if(header[i].name == 'Subject'){
+                html += header[i].value;
+                break;
+              }
+            }
+            html += '<br>'
+            html += '</td></tr>';
+            $(".table").append(html);
+          });
+        });
+      });
+    }else{
+        $('#login-btn').show();
+        $('#message').hide();
+    }
+  }
+  function getMessage(userId, messageId, callback) {
+    gapi.client.load('gmail', 'v1').then(function(){
+      var request = gapi.client.gmail.users.messages.get({
+        'userId': userId,
+        'id': messageId
+      })
+      request.execute(callback)
+    });
+  }
+  </script>
+  <script src="https://apis.google.com/js/client.js?onload=OnLoadCallback"></script>
+</body>
+</html>
