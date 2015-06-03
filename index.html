@@ -5,11 +5,37 @@
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"></link>
+  <style>
+  .glyphicon-refresh-animate {
+    -animation: spin .7s infinite linear;
+    -ms-animation: spin .7s infinite linear;
+    -webkit-animation: spinw .7s infinite linear;
+    -moz-animation: spinm .7s infinite linear;
+  }
+
+  @keyframes spin {
+    from { transform: scale(1) rotate(0deg);}
+    to { transform: scale(1) rotate(360deg);}
+  }
+
+  @-webkit-keyframes spinw {
+    from { -webkit-transform: rotate(0deg);}
+    to { -webkit-transform: rotate(360deg);}
+  }
+
+  @-moz-keyframes spinm {
+    from { -moz-transform: rotate(0deg);}
+    to { -moz-transform: rotate(360deg);}
+  }
+  .loading{
+    line-height: 5rem;
+  }
+  </style>
 </head>
 <body>
 <div class="container">
   <div class="page-header">
-    <h4>Gmail API - Sellsuki <small>v0.0.1</small></h4>
+    <h4>Gmail API - Sellsuki <small>v0.0.3</small></h4>
   </div>
     <div class="text-center">
       <button id="login-btn" class="btn btn-danger" onclick="Auth()">Login with Gmail</button>
@@ -18,6 +44,11 @@
       <div class="panel-heading">Message</div>
       <table class="table">
       </table>
+    </div>
+    <div class="loading">
+      <div class="col-md-12 text-center">
+        <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+      </div>
     </div>
   </div>
   <script>
@@ -64,6 +95,7 @@
         type: "GET",
         url: "/inbox/"+access_token+"/"+nextPage
       }).done(function(data){
+        $('.loading').show();
         data.list.forEach(function(item){
           getMessage('me', item, function(res){
             var html = '<tr><td>';
@@ -77,6 +109,7 @@
             html += '<br>'
             html += '</td></tr>';
             $(".table").append(html);
+            $('.loading').hide();
           });
         });
         nextPage = data.nextPage;

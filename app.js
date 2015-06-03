@@ -12,7 +12,7 @@ app.get('/', function(req, res){
 
 app.get('/inbox/:token/:n', function(req, res){
   var access_token = req.params.token;
-  var _url = 'https://www.googleapis.com/gmail/v1/users/me/messages?labelIds=INBOX&maxResults=20&q=category%3Aprimary&access_token='+access_token;
+  var _url = 'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=20&access_token='+access_token;
   var nPage = req.params.n;
   if(nPage != '-1'){
     _url += '&pageToken='+nPage;
