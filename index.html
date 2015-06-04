@@ -8,23 +8,24 @@
 <body>
 <div class="container" ng-controller="appController">
   <div class="page-header">
-    <h4>Gmail API - Sellsuki <small>v0.0.4</small></h4>
+    <h4>Gmail API - Sellsuki <small>v0.1.0</small></h4>
   </div>
     <div class="text-center" ng-show="state.loginBtn">
       <button class="btn btn-danger" ng-click="checkAuth(false)">Login with Gmail</button>
     </div>
-    <div class="panel panel-info" ng-show="state.message">
-      <div class="panel-heading">Message</div>
-      <table class="table">
-        <tr ng-repeat="email in emails track by $index">
-          <td>
-            {{$index+1}}.<strong>{{email.From}}</strong><br>{{email.Subject}}
-          </td>
-        </tr>
-      </table>
-      <div class="text-center" ng-show="state.loginBtn">
-        <button class="btn btn-success" ng-click="makeMessage">Load More.</button>
+    <div style="overflow-y: auto; height: 60rem;">
+      <div class="panel panel-info" ng-show="state.message">
+        <table class="table">
+          <tr ng-repeat="email in emails track by $index">
+            <td>
+              {{$index+1}}.<strong>{{email.From}}</strong><br>{{email.Subject}}
+            </td>
+          </tr>
+        </table>
       </div>
+    </div>
+    <div class="text-center" ng-show="state.loadMore" style="padding-bottom:2rem;">
+      <button id="loadBtn" autocomplete="off" class="btn btn-success" data-loading-text="Loading..." ng-click="makeMessage()">Load More</button>
     </div>
   </div>
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
