@@ -27,7 +27,9 @@ angular.module('GmailSellsuki', []).controller('appController', ['$scope', funct
   }
 
   $scope.makeMessage = function makeMessage(){
+
     $("#loadBtn").button('loading');
+
     $scope.getMessageList(function(result){
       result.messages.forEach(function(item){
         $scope.getMessage(item.threadId, function(res){
@@ -48,6 +50,13 @@ angular.module('GmailSellsuki', []).controller('appController', ['$scope', funct
           $('#loadBtn').button('reset');
         });
       });
+
+      $scope.nextPage = result.nextPageToken;
+      if(typeof $scope.nextPage == 'undefined'){
+        $scope.state.loadMore = 0;
+        $scope.$apply();
+      }
+
     });
   }
 
@@ -72,9 +81,6 @@ angular.module('GmailSellsuki', []).controller('appController', ['$scope', funct
         });
         request.execute(callback);
       });
-    }else{
-      $scope.state.loadMore = 0;
-      $scope.$apply();
     }
   }
 }]);
