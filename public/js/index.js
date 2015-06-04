@@ -37,32 +37,37 @@ angular.module('GmailSellsuki', []).controller('appController', function($scope)
     }
   }
 
-  $scope.makeMessage = function(){
+  $scope.getMessageList = function(callback){
     if (typeof $scope.nextPage != 'undefined'){
-      $.ajax({
-        type: "GET",
-        url: "/inbox/" + $scope.access_token + "/" + $scope.nextPage
-      }).done(function(data){
-        $('.loading').show();
-        data.list.forEach(function(item){
-          $scope.getMessage('me', item, function(res){
-            var html = '<tr><td>';
-            var header = res.payload.headers;
-            for(var i=0; i < header.length ; i++){
-              if(header[i].name == 'Subject'){
-                html += header[i].value;
-                break;
-              }
-            }
-            html += '<br>'
-            html += '</td></tr>';
-            $(".table").append(html);
-            $('.loading').hide();
-          });
+      gapi.client.load('gmail', 'v1').then(function(){
+        var request = gapi.client.gmail.users.messages.list({
+          'userId': 'me',
+          'maxResults': 20
         });
-        $scope.nextPage = data.nextPage;
+        request.execute(callback);
       });
     }
+  }
+
+  $scope.makeMessage = function(){
+    $scope.getMessageList(function(result){
+      result.messages.forEach(function(item){
+        $scope.getMessage('me', item.threadId, function(res){
+          var html = '<tr><td>';
+          var header = res.payload.headers;
+          for(var i=0; i < header.length ; i++){
+            if(header[i].name == 'Subject'){
+              html += header[i].value;
+              break;
+            }
+          }
+          html += '<br>'
+          html += '</td></tr>';
+          $(".table").append(html);
+          $('.loading').hide();
+        });
+      });
+    });
   }
 
   $scope.getMessage = function(userId, messageId, callback) {
@@ -70,8 +75,8 @@ angular.module('GmailSellsuki', []).controller('appController', function($scope)
       var request = gapi.client.gmail.users.messages.get({
         'userId': userId,
         'id': messageId
-      })
-      request.execute(callback)
+      });
+      request.execute(callback);
     });
   }
 });

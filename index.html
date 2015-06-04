@@ -28,6 +28,12 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
   <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.js"></script>
   <script type="text/javascript" src="js/index.js"></script>
-  <script src="https://apis.google.com/js/client.js?onload=OnLoadCallback"></script>
+  <script type="text/javascript">
+    function loadCallback(){
+      console.log(angular.element(".container").scope());
+      angular.element(".container").scope().onLoadCallback();
+    }
+  </script>
+  <script src="https://apis.google.com/js/client.js?onload=loadCallback"></script>
 </body>
 </html>
