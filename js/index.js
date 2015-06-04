@@ -1,7 +1,7 @@
 angular.module('GmailSellsuki', []).controller('appController', ['$scope', function($scope){
 
   $scope.client_id = '331691048436-q1g7qk6qf50hvg896regfa2pdv0n1q6h.apps.googleusercontent.com';
-  $scope.scopes = ['https://mail.google.com/', 'https://www.googleapis.com/auth/plus.me'];
+  $scope.scopes = ['https://mail.google.com/'];
   $scope.nextPage = '';
   $scope.access_token = '';
   $scope.emails = [];
@@ -14,7 +14,7 @@ angular.module('GmailSellsuki', []).controller('appController', ['$scope', funct
   $scope.result = function result(res){
     if(res && !res.error){
       $scope.access_token = res.access_token;
-      $scope.makeMessage();
+      $scope.createInbox();
       $scope.state.message = 1;
       $scope.state.loginBtn = 0;
       $scope.state.loadMore = 1;
@@ -26,7 +26,7 @@ angular.module('GmailSellsuki', []).controller('appController', ['$scope', funct
     $scope.$apply();
   }
 
-  $scope.makeMessage = function makeMessage(){
+  $scope.createInbox = function createInbox(){
 
     $("#loadBtn").button('loading');
 
@@ -77,7 +77,7 @@ angular.module('GmailSellsuki', []).controller('appController', ['$scope', funct
           'userId': 'me',
           'maxResults': 10,
           'pageToken' : $scope.nextPage,
-          'q' : 'from:(j.brucker@ku.th)'
+          'q' : ''
         });
         request.execute(callback);
       });

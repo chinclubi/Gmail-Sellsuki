@@ -8,7 +8,7 @@
 <body>
 <div class="container" ng-controller="appController">
   <div class="page-header">
-    <h4>Gmail API - Sellsuki <small>v0.1.1</small></h4>
+    <h4>Gmail API - Sellsuki <small>v0.1.2</small></h4>
   </div>
     <div class="text-center" ng-show="state.loginBtn">
       <button class="btn btn-danger" ng-click="checkAuth(false)">Login with Gmail</button>
@@ -24,13 +24,13 @@
         </table>
       </div>
     </div>
-    <div class="text-center" ng-show="state.loadMore" style="padding-bottom:2rem;">
-      <button id="loadBtn" autocomplete="off" class="btn btn-success" data-loading-text="Loading..." ng-click="makeMessage()">Load More</button>
+    <div class="text-center" ng-show="state.loadMore" style="line-height:5rem;">
+      <button id="loadBtn" autocomplete="off" class="btn btn-success" data-loading-text="Loading..." ng-click="createInbox()">Load More</button>
     </div>
   </div>
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
   <script type="text/javascript">
     function loadCallback(){
       angular.element(".container").scope().checkAuth(true);
