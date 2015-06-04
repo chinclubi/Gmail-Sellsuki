@@ -1,10 +1,13 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var path = require('path');
 var request = require('request');
 
 var port = 8000;
 
 var api_key = "AIzaSyDCSiUDC9ok-pD966ouSzSZVqhnSj-9Vzw";
+
+app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(req, res){
   res.sendFile(path.join(__dirname+'/index.html'));
