@@ -18,7 +18,7 @@
         <table class="table">
           <tr ng-repeat="email in emails track by $index">
             <td>
-              {{$index+1}}.<strong>{{email.From}}</strong><br>{{email.Subject}}
+              {{$index + 1}}. <strong>{{email.From}}</strong><br>{{email.Subject}}
             </td>
           </tr>
         </table>
