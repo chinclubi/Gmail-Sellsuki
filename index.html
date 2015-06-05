@@ -6,9 +6,9 @@
   <link rel="stylesheet" href="css/index.css" media="screen" title="no title" charset="utf-8">
 </head>
 <body>
-<div class="container" ng-controller="appController">
+<div class="container" ng-controller="appController as inbox">
   <div class="page-header">
-    <h4>Gmail API - Sellsuki <small>v0.1.2</small></h4>
+    <h4>Gmail API - Sellsuki <small>v0.1.3</small></h4>
   </div>
     <div class="text-center" ng-show="state.loginBtn">
       <button class="btn btn-danger" ng-click="checkAuth(false)">Login with Gmail</button>
@@ -18,18 +18,22 @@
         <table class="table">
           <tr ng-repeat="email in emails track by $index">
             <td>
-              {{$index + 1}}. <strong>{{email.From}}</strong><br>{{email.Subject}}
+              <strong>{{email.From}}</strong><br>{{email.Subject}}
+            </td>
+          </tr>
+          <tr ng-if="emails.length == 0">
+            <td>
+              <strong>No email in inbox.</strong>
             </td>
           </tr>
         </table>
       </div>
     </div>
     <div class="text-center" ng-show="state.loadMore" style="line-height:5rem;">
-      <button id="loadBtn" autocomplete="off" class="btn btn-success" data-loading-text="Loading..." ng-click="createInbox()">Load More</button>
+      <button autocomplete="off" class="btn btn-success" ng-disabled='state.loading[0]' ng-click="createInbox()">{{state.loading[1]}}</button>
     </div>
   </div>
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
   <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
   <script type="text/javascript">
     function loadCallback(){
