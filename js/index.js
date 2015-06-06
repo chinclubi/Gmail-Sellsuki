@@ -1,4 +1,5 @@
-angular.module('GmailSellsuki', []).controller('appController', ['$scope', 'showState', function($scope, showState){
+var app = angular.module('GmailSellsuki', ['state']);
+app.controller('appController', ['$scope', 'showState', function($scope, showState){
 
   $scope.clientId = '331691048436-q1g7qk6qf50hvg896regfa2pdv0n1q6h.apps.googleusercontent.com';
   $scope.scopes = ['https://mail.google.com/'];
@@ -92,21 +93,63 @@ angular.module('GmailSellsuki', []).controller('appController', ['$scope', 'show
     });
   }
 
-}]).factory('showState', function(){
+}])
+app.controller('sendEmail', ['$scope', 'sendState', function($scope, sendState){
+
+  $scope.email = this.email;
+  $scope.state = sendState.normalState();
+
+  $scope.sendMail = function(){
+    $scope.state = sendState.sendState();
+    var result = gapi.client.gmail.users.getProfile({
+      userId : 'me'
+    });
+    result.execute($scope.getProfile);
+  }
+  $scope.getProfile = function(res){
+    $scope.email.sender = res.emailAddress;
+    var emailLine = [];
+    emailLine.push("From: Sellsuki <"+$scope.email.sender+">");
+    emailLine.push("To: "+$scope.email.receiver);
+    emailLine.push("Subject: "+$scope.email.subject);
+    emailLine.push("");
+    emailLine.push($scope.email.message);
+
+    var mail = emailLine.join("\r\n").trim();
+    var base64EncodedEmail = btoa(unescape(encodeURIComponent(mail))).replace(/\+/g, '-').replace(/\//g, '_');
+
+    var requestEmail = gapi.client.gmail.users.messages.send({
+      userId: 'me',
+      resource: {
+        raw: base64EncodedEmail
+      }
+    });
+    requestEmail.execute($scope.requestEmail);
+  }
+  $scope.requestEmail = function(res){
+    $scope.$apply(function(){
+      $scope.state = sendState.normalState();
+    });
+  }
+}]);
+angular.module('state', []).factory('showState', function(){
   var init = function(){
-    return { loginBtn: 0, message: 0, loadMore: 0, loading: [0, 'Load More'] };
+    return { loginBtn: 0, message: 0, loadMore: 0, loading: [0, 'Load More']};
   }
   var loginState = function(){
-    return { loginBtn: 1, message: 0, loadMore: 0, loading: [0, 'Load More'] };
+    return { loginBtn: 1, message: 0, loadMore: 0, loading: [0, 'Load More']};
   }
   var normalState = function(){
-    return { loginBtn: 0, message: 1, loadMore: 1, loading: [0, 'Load More'] };
+    return { loginBtn: 0, message: 1, loadMore: 1, loading: [0, 'Load More']};
   }
   var noEnoughState = function(){
-    return { loginBtn: 0, message: 1, loadMore: 0, loading: [0, 'Load More'] };
+    return { loginBtn: 0, message: 1, loadMore: 0, loading: [0, 'Load More']};
   }
   var loadState = function(){
-    return { loginBtn: 0, message: 1, loadMore: 1, loading: [1, 'Loading..'] };
+    return { loginBtn: 0, message: 1, loadMore: 1, loading: [1, 'Loading..']};
+  }
+  var sendState = function(){
+    return { loginBtn: 0, message: 1, loadMore: 1, loading: [0, 'Load More']};
   }
 
   return {
@@ -116,5 +159,16 @@ angular.module('GmailSellsuki', []).controller('appController', ['$scope', 'show
     noEnoughState : noEnoughState,
     loadState : loadState
   }
+}).factory('sendState', function(){
+  var normal = function(){
+    return { sending: [0, 'Send']};
+  }
+  var sending = function(){
+    return { sending: [1, 'Sending...']}
+  }
 
-});
+  return {
+    normalState : normal,
+    sendState : sending
+  }
+})
