@@ -8,15 +8,15 @@
 <body>
 <div class="container" ng-controller="appController" >
   <div class="page-header">
-    <h4>Gmail API - Sellsuki <small>v0.2.1</small></h4>
+    <h4>Gmail API - Sellsuki <small>v0.2.2</small></h4>
   </div>
-    <div class="text-center row" ng-show="state.loginBtn">
+    <div class="text-center row" ng-hide="state.isLogin">
       <button class="btn btn-danger" ng-click="checkAuth(false)">Login with Gmail</button>
     </div>
-    <div class="row" ng-show="state.message">
+    <div class="row" ng-show="state.isLogin">
       <div class="col-md-7">
         <div style="overflow-y: auto; height: 61rem;">
-          <div class="panel panel-primary" ng-show="state.message">
+          <div class="panel panel-primary">
             <div class="panel-heading">
               Inbox
             </div>
@@ -34,7 +34,7 @@
             </table>
           </div>
         </div>
-        <div class="text-center" ng-show="state.loadMore" style="line-height:4rem;">
+        <div class="text-center" ng-show="state.canLoad" style="line-height:4rem;">
           <button autocomplete="off" class="btn btn-success" ng-disabled='state.loading[0]' ng-click="createInbox()">{{state.loading[1]}}</button>
         </div>
       </div>
@@ -71,8 +71,8 @@
             </form>
           </div>
         </div>
-        <div class="alert alert-success show-hide" role="alert" ng-hide="state.result.success"><b>Successful!</b> Your message was sent successfully</div>
-        <div class="alert alert-danger show-hide" role="alert" ng-hide="state.result.error"><b>Oh no!</b> Something worng while sending your email</div>
+        <div class="alert alert-success show-hide" role="alert" ng-show="state.result.show && state.result.isComplete"><b>Successful!</b> Your message was sent successfully</div>
+        <div class="alert alert-danger show-hide" role="alert" ng-show="state.result.show && !state.result.isComplete"><b>Oh no!</b> Something worng while sending your email</div>
       </div>
     </div>
   </div>

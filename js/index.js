@@ -18,18 +18,18 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
   $scope.authResult = function(res){
     if(res && !res.error){
       $scope.$apply(function(){
-        $scope.state = showState.normalState();
+        $scope.state = showState.isLogin(true);
         $scope.createInbox();
       });
     }else{
       $scope.$apply(function(){
-        $scope.state = showState.loginState();
+        $scope.state = showState.isLogin(false);
       });
     }
   }
 
   $scope.createInbox = function(){
-    $scope.state = showState.loadState();
+    $scope.state = showState.isLoading(true);
     $scope.findMessageList( function(result){
 
       angular.forEach(result.messages, function(value, key){
@@ -40,7 +40,7 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
 
       if(typeof $scope.nextPage == 'undefined'){
         $scope.$apply(function(){
-          $scope.state = showState.noEnoughState();
+          $scope.state = showState.canLoad(false);
         });
       }
 
@@ -63,7 +63,7 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
 
     $scope.$apply(function(){
       $scope.emails.push(tmp);
-      $scope.state = showState.normalState();
+      $scope.state = showState.isLoading(false);
     });
   }
 
@@ -75,7 +75,7 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
           'userId': 'me',
           'maxResults': 10,
           'pageToken' : $scope.nextPage,
-          'q' : ''
+          'q' : 'label:inbox'
         });
         request.execute(callback);
       });
@@ -97,15 +97,16 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
 app.controller('sendEmail', ['$scope', '$interval','sendState', function($scope, $interval, sendState){
 
   $scope.email = this.email;
-  $scope.state = sendState.normalState();
+  $scope.state = sendState.init();
 
   $scope.sendMail = function(){
-    $scope.state = sendState.sendState();
+    $scope.state = sendState.isSending(true);
     var result = gapi.client.gmail.users.getProfile({
       userId : 'me'
     });
     result.execute($scope.getProfile);
   }
+
   $scope.getProfile = function(res){
     $scope.email.sender = res.emailAddress;
     var emailLine = [];
@@ -126,70 +127,70 @@ app.controller('sendEmail', ['$scope', '$interval','sendState', function($scope,
     });
     requestEmail.execute($scope.requestEmail);
   }
+
   $scope.requestEmail = function(res){
-    if(res && !res.error){
-      $scope.$apply(function(){
-        $scope.state = sendState.sendSuccess();
-        $interval(function(){
-          $scope.state = sendState.normalState();
-        }, 7200);
-      });
-    }else{
-      $scope.$apply(function(){
-        $scope.state = sendState.sendError();
-        $interval(function(){
-          $scope.state = sendState.normalState();
-        }, 7200);
-      });
-    }
-  }
-}]);
-angular.module('state', []).factory('showState', function(){
-  var init = function(){
-    return { loginBtn: 0, message: 0, loadMore: 0, loading: [0, 'Load More']};
-  }
-  var loginState = function(){
-    return { loginBtn: 1, message: 0, loadMore: 0, loading: [0, 'Load More']};
-  }
-  var normalState = function(){
-    return { loginBtn: 0, message: 1, loadMore: 1, loading: [0, 'Load More']};
-  }
-  var noEnoughState = function(){
-    return { loginBtn: 0, message: 1, loadMore: 0, loading: [0, 'Load More']};
-  }
-  var loadState = function(){
-    return { loginBtn: 0, message: 1, loadMore: 1, loading: [1, 'Loading..']};
-  }
-  var sendState = function(){
-    return { loginBtn: 0, message: 1, loadMore: 1, loading: [0, 'Load More']};
+    $scope.$apply(function(){
+      $scope.state = sendState.isSending(false);
+      if(res && !res.error){
+        $scope.state = sendState.showResult(true, true);
+      }else{
+        $scope.state = sendState.showResult(true, false);
+      }
+      $interval(function(){
+        $scope.state = sendState.showResult(false, true);
+      }, 5400);
+    });
   }
 
+}]);
+angular.module('state', []).factory('showState', function(){
+
+  var state = { isLogin: false, canLoad: true, loading: [ false, 'Load More']};
+
   return {
-    init : init,
-    loginState : loginState,
-    normalState : normalState,
-    noEnoughState : noEnoughState,
-    loadState : loadState
+    init : function(){
+      return state;
+    },
+    isLogin : function(b){
+      state.isLogin = b;
+      return state;
+    },
+    canLoad : function(b){
+      state.canLoad = b;
+      return state;
+    },
+    isLoading : function(isLoading){
+      state.loading[0] = isLoading;
+      if(isLoading){
+        state.loading[1] = 'Loading...';
+      }else{
+        state.loading[1] = 'Load More';
+      }
+      return state;
+    }
   }
 
 }).factory('sendState', function(){
-  var normal = function(){
-    return { result: {error: 1, success: 1}, sending: [0, 'Send']};
-  }
-  var sending = function(){
-    return { result: {error: 1, success: 1}, sending: [1, 'Sending...']}
-  }
-  var error = function(){
-    return { result: {error: 0, success: 1}, sending: [0, 'Send']}
-  }
-  var success = function(){
-    return { result: {error: 1, success: 0}, sending: [0, 'Send']}
-  }
+
+  var state = { result: {show : false , isComplete : true} , sending: [ false, 'Send']};
 
   return {
-    normalState : normal,
-    sendState : sending,
-    sendError : error,
-    sendSuccess : success
+    init : function(){
+      return state;
+    },
+    isSending : function(b){
+      state.sending[0] = b;
+      if(b){
+        state.sending[1] = 'Sending...';
+      }else{
+        state.sending[1] = 'Send';
+      }
+      return state;
+    },
+    showResult : function(show, result){
+      state.result.show = show;
+      state.result.isComplete = result;
+      return state;
+    }
   }
 })
