@@ -19,6 +19,15 @@
   from { -moz-transform: rotate(0deg);}
   to { -moz-transform: rotate(360deg);}
 }
-.loading{
-  line-height: 5rem;
+
+.show-hide{
+  -webkit-transition: opacity 3s ease-in-out;
+  -moz-transition: opacity 3s ease-in-out;
+  -ms-transition: opacity 3s ease-in-out;
+  -o-transition: opacity 3s ease-in-out;
+  opacity: 1;
+}
+
+.show-hide .ng-hide{
+  opacity: 0;
 }

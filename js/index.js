@@ -94,7 +94,7 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
   }
 
 }])
-app.controller('sendEmail', ['$scope', 'sendState', function($scope, sendState){
+app.controller('sendEmail', ['$scope', '$interval','sendState', function($scope, $interval, sendState){
 
   $scope.email = this.email;
   $scope.state = sendState.normalState();
@@ -127,9 +127,21 @@ app.controller('sendEmail', ['$scope', 'sendState', function($scope, sendState){
     requestEmail.execute($scope.requestEmail);
   }
   $scope.requestEmail = function(res){
-    $scope.$apply(function(){
-      $scope.state = sendState.normalState();
-    });
+    if(res && !res.error){
+      $scope.$apply(function(){
+        $scope.state = sendState.sendSuccess();
+        $interval(function(){
+          $scope.state = sendState.normalState();
+        }, 7200);
+      });
+    }else{
+      $scope.$apply(function(){
+        $scope.state = sendState.sendError();
+        $interval(function(){
+          $scope.state = sendState.normalState();
+        }, 7200);
+      });
+    }
   }
 }]);
 angular.module('state', []).factory('showState', function(){
@@ -159,16 +171,25 @@ angular.module('state', []).factory('showState', function(){
     noEnoughState : noEnoughState,
     loadState : loadState
   }
+
 }).factory('sendState', function(){
   var normal = function(){
-    return { sending: [0, 'Send']};
+    return { result: {error: 1, success: 1}, sending: [0, 'Send']};
   }
   var sending = function(){
-    return { sending: [1, 'Sending...']}
+    return { result: {error: 1, success: 1}, sending: [1, 'Sending...']}
+  }
+  var error = function(){
+    return { result: {error: 0, success: 1}, sending: [0, 'Send']}
+  }
+  var success = function(){
+    return { result: {error: 1, success: 0}, sending: [0, 'Send']}
   }
 
   return {
     normalState : normal,
-    sendState : sending
+    sendState : sending,
+    sendError : error,
+    sendSuccess : success
   }
 })

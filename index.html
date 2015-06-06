@@ -8,7 +8,7 @@
 <body>
 <div class="container" ng-controller="appController" >
   <div class="page-header">
-    <h4>Gmail API - Sellsuki <small>v0.2.0</small></h4>
+    <h4>Gmail API - Sellsuki <small>v0.2.1</small></h4>
   </div>
     <div class="text-center row" ng-show="state.loginBtn">
       <button class="btn btn-danger" ng-click="checkAuth(false)">Login with Gmail</button>
@@ -71,6 +71,8 @@
             </form>
           </div>
         </div>
+        <div class="alert alert-success show-hide" role="alert" ng-hide="state.result.success"><b>Successful!</b> Your message was sent successfully</div>
+        <div class="alert alert-danger show-hide" role="alert" ng-hide="state.result.error"><b>Oh no!</b> Something worng while sending your email</div>
       </div>
     </div>
   </div>
