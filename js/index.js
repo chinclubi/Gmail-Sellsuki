@@ -90,12 +90,15 @@ app.controller('appController', ['$scope', '$modal', 'showState', function($scop
   $scope.sendMailModal = function(){
     var modalInstance = $modal.open({
       animation: true,
-      templateUrl: 'emailModal.html',
+      templateUrl: 'template/template-send-mail.html',
       controller: 'sendEmail',
       size: ''
     });
   }
 
+  $scope.detail = function(){
+    console.log('xxxxxx');
+  }
 }]);
 
 app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', function($scope, $modalInstance, sendState){
