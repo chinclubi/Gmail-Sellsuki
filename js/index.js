@@ -16,31 +16,29 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
   }
 
   $scope.authResult = function(res){
-    if(res && !res.error){
-      $scope.$apply(function(){
-        $scope.state = showState.isLogin(true);
+    $scope.$apply(function(){
+      if(res && !res.error){
+        showState.isLogin(true);
         $scope.createInbox();
-      });
-    }else{
-      $scope.$apply(function(){
-        $scope.state = showState.isLogin(false);
-      });
-    }
+      }else{
+        showState.isLogin(false);
+      }
+    });
   }
 
   $scope.createInbox = function(){
-    $scope.state = showState.isLoading(true);
+
+    showState.isLoading(true);
     $scope.findMessageList( function(result){
 
       angular.forEach(result.messages, function(value, key){
-        $scope.getMessage(value.threadId, $scope.findMessageDetail);
+        $scope.getMessage(value.id, $scope.findMessageDetail);
       });
 
       $scope.nextPage = result.nextPageToken;
-
       if(typeof $scope.nextPage == 'undefined'){
         $scope.$apply(function(){
-          $scope.state = showState.canLoad(false);
+          showState.canLoad(false);
         });
       }
 
@@ -63,7 +61,7 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
 
     $scope.$apply(function(){
       $scope.emails.push(tmp);
-      $scope.state = showState.isLoading(false);
+      showState.isLoading(false);
     });
   }
 
@@ -75,7 +73,7 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
           'userId': 'me',
           'maxResults': 10,
           'pageToken' : $scope.nextPage,
-          'q' : 'label:inbox'
+          'q' : ''
         });
         request.execute(callback);
       });
@@ -94,13 +92,13 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
   }
 
 }])
-app.controller('sendEmail', ['$scope', '$interval','sendState', function($scope, $interval, sendState){
+app.controller('sendEmail', ['$scope','sendState', function($scope, sendState){
 
   $scope.email = this.email;
   $scope.state = sendState.init();
 
   $scope.sendMail = function(){
-    $scope.state = sendState.isSending(true);
+    sendState.isSending(true);
     var result = gapi.client.gmail.users.getProfile({
       userId : 'me'
     });
@@ -130,15 +128,12 @@ app.controller('sendEmail', ['$scope', '$interval','sendState', function($scope,
 
   $scope.requestEmail = function(res){
     $scope.$apply(function(){
-      $scope.state = sendState.isSending(false);
+      sendState.isSending(false);
       if(res && !res.error){
-        $scope.state = sendState.showResult(true, true);
+        sendState.showResult(true);
       }else{
-        $scope.state = sendState.showResult(true, false);
+        sendState.showResult(false);
       }
-      $interval(function(){
-        $scope.state = sendState.showResult(false, true);
-      }, 5400);
     });
   }
 
@@ -153,11 +148,9 @@ angular.module('state', []).factory('showState', function(){
     },
     isLogin : function(b){
       state.isLogin = b;
-      return state;
     },
     canLoad : function(b){
       state.canLoad = b;
-      return state;
     },
     isLoading : function(isLoading){
       state.loading[0] = isLoading;
@@ -166,11 +159,10 @@ angular.module('state', []).factory('showState', function(){
       }else{
         state.loading[1] = 'Load More';
       }
-      return state;
     }
   }
 
-}).factory('sendState', function(){
+}).factory('sendState', ['$interval', function($interval){
 
   var state = { result: {show : false , isComplete : true} , sending: [ false, 'Send']};
 
@@ -185,12 +177,14 @@ angular.module('state', []).factory('showState', function(){
       }else{
         state.sending[1] = 'Send';
       }
-      return state;
     },
-    showResult : function(show, result){
-      state.result.show = show;
+    showResult : function(result){
+      state.result.show = true;
       state.result.isComplete = result;
-      return state;
+      $interval(function(){
+        state.result.show = false;
+      }, 5400);
     }
   }
-})
+
+}]);
