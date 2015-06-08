@@ -8,32 +8,32 @@
 <body>
 <div class="container" ng-controller="appController" >
   <div class="page-header">
-    <h4>Gmail API - Sellsuki <small>v0.2.3</small></h4>
+    <h4>Gmail API - Sellsuki <small>v0.2.4</small></h4>
   </div>
     <div class="text-center row" ng-hide="state.isLogin">
       <button class="btn btn-danger" ng-click="checkAuth(false)">Login with Gmail</button>
     </div>
     <div class="row" ng-show="state.isLogin">
       <div class="col-md-7">
-        <div class='slimScroll'>
           <div class="panel panel-primary">
             <div class="panel-heading">
               Inbox
             </div>
-            <table class="table">
-              <tr ng-repeat="email in emails track by $index">
-                <td>
-                  <strong>{{email.From}}</strong><br>{{email.Subject}}
-                </td>
-              </tr>
-              <tr ng-if="emails.length == 0">
-                <td>
-                  <strong>No email in inbox.</strong>
-                </td>
-              </tr>
-            </table>
+            <div class="slimScroll">
+              <table class="table">
+                <tr ng-repeat="email in emails track by $index">
+                  <td>
+                    {{$index + 1}}. <strong>{{email.From}}</strong><br>{{email.Subject}}
+                  </td>
+                </tr>
+                <tr ng-if="emails.length == 0">
+                  <td>
+                    <strong>No email in inbox.</strong>
+                  </td>
+                </tr>
+              </table>
+            </div>
           </div>
-        </div>
         <div class="text-center" ng-show="state.canLoad" style="line-height:4rem;">
           <button autocomplete="off" class="btn btn-success" ng-disabled='state.loading[0]' ng-click="createInbox()">{{state.loading[1]}}</button>
         </div>
@@ -81,7 +81,7 @@
   <script type="text/javascript">
     $(function(){
       $('.slimScroll').slimscroll({
-        height: '61rem'
+        height: '60rem'
       });
     });
     function loadCallback(){
