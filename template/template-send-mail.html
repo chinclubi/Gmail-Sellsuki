@@ -1,0 +1,32 @@
+<div class="modal-header">
+  <button type="button" class="close" aria-label="Close" ng-click="closeModal()"><span aria-hidden="true">&times;</span></button>
+  <h3 class="modal-title">Send Email</h3>
+</div>
+<div class="modal-body">
+  <form class="form-horizontal" ng-submit="sendMail()">
+    <div class="form-group">
+      <label for="receiver" class="col-sm-2 control-label">To</label>
+      <div class="col-sm-10">
+        <input type="email" class="form-control" placeholder="example@gmail.com" name="receiver" ng-model="email.receiver" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="subject" class="col-sm-2 control-label">Subject</label>
+      <div class="col-sm-10">
+        <input type="text" class="form-control" placeholder="Subject" name="subject" ng-model="email.subject" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="subject" class="col-sm-2 control-label"></label>
+      <div class="col-sm-10">
+        <textarea class="form-control" rows="5" placeholder="Input some text" ng-model="email.message" required></textarea>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+        <button type="submit" class="btn btn-default" ng-disabled='state.sending[0]'>{{state.sending[1]}}</button>
+      </div>
+    </div>
+  </form>
+</div>
+<alert ng-repeat="alert in state.alerts" type="{{alert.type}}" ng-bind-html="alert.msg"></alert>

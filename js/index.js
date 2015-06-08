@@ -1,11 +1,11 @@
-var app = angular.module('GmailSellsuki', ['state']);
-app.controller('appController', ['$scope', 'showState', function($scope, showState){
+var app = angular.module('GmailSellsuki', ['ui.bootstrap', 'state', 'ngSanitize']);
+app.controller('appController', ['$scope', '$modal', 'showState', function($scope, $modal, showState){
 
   $scope.clientId = '331691048436-q1g7qk6qf50hvg896regfa2pdv0n1q6h.apps.googleusercontent.com';
-  $scope.scopes = ['https://mail.google.com/', 'https://www.googleapis.com/auth/contacts.readonly'];
+  $scope.scopes = ['https://mail.google.com/', 'https://www.google.com/m8/feeds'];
   $scope.nextPage = '';
   $scope.emails = [];
-  $scope.state = showState.init();
+  $scope.inbox = showState.init();
 
   $scope.checkAuth = function checkAuth(immediate){
     gapi.auth.authorize({
@@ -19,7 +19,7 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
     $scope.$apply(function(){
       if(res && !res.error){
         showState.isLogin(true);
-        $scope.createInbox();
+        gapi.client.load('gmail', 'v1', $scope.createInbox);
       }else{
         showState.isLogin(false);
       }
@@ -68,31 +68,40 @@ app.controller('appController', ['$scope', 'showState', function($scope, showSta
   $scope.findMessageList = function(callback){
 
     if (typeof $scope.nextPage != 'undefined'){
-      gapi.client.load('gmail', 'v1').then(function(){
-        var request = gapi.client.gmail.users.messages.list({
-          'userId': 'me',
-          'maxResults': 10,
-          'pageToken' : $scope.nextPage,
-          'q' : ''
-        });
-        request.execute(callback);
+      var request = gapi.client.gmail.users.messages.list({
+        'userId': 'me',
+        'maxResults': 10,
+        'pageToken' : $scope.nextPage,
+        'q' : ''
       });
+      request.execute(callback);
     }
 
   }
 
   $scope.getMessage = function(messageId, callback) {
-    gapi.client.load('gmail', 'v1').then(function(){
-      var request = gapi.client.gmail.users.messages.get({
-        'userId': 'me',
-        'id': messageId
-      });
-      request.execute(callback);
+    var request = gapi.client.gmail.users.messages.get({
+      'userId': 'me',
+      'id': messageId
+    });
+    request.execute(callback);
+  }
+
+  $scope.sendMailModal = function(){
+    var modalInstance = $modal.open({
+      animation: true,
+      templateUrl: 'template/template-send-mail.html',
+      controller: 'sendEmail',
+      size: ''
     });
   }
 
-}])
-app.controller('sendEmail', ['$scope','sendState', function($scope, sendState){
+  $scope.detail = function(){
+    console.log('xxxxxx');
+  }
+}]);
+
+app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', function($scope, $modalInstance, sendState){
 
   $scope.email = this.email;
   $scope.state = sendState.init();
@@ -128,15 +137,18 @@ app.controller('sendEmail', ['$scope','sendState', function($scope, sendState){
 
   $scope.requestEmail = function(res){
     $scope.$apply(function(){
-      sendState.isSending(false);
       if(res && !res.error){
-        sendState.showResult(true);
+        sendState.alerts(true);
       }else{
-        sendState.showResult(false);
+        sendState.alerts(false);
       }
+      sendState.isSending(false);
     });
   }
 
+  $scope.closeModal = function(){
+    $modalInstance.dismiss();
+  }
 }]);
 angular.module('state', []).factory('showState', function(){
 
@@ -164,7 +176,7 @@ angular.module('state', []).factory('showState', function(){
 
 }).factory('sendState', ['$interval', function($interval){
 
-  var state = { result: {show : false , isComplete : true} , sending: [ false, 'Send']};
+  var state = { alerts : [], result: {show : false , isComplete : true} , sending: [ false, 'Send']};
 
   return {
     init : function(){
@@ -178,11 +190,14 @@ angular.module('state', []).factory('showState', function(){
         state.sending[1] = 'Send';
       }
     },
-    showResult : function(result){
-      state.result.show = true;
-      state.result.isComplete = result;
+    alerts : function(result){
+      if(result){
+        state.alerts.push({ type: 'success', msg: '<b>Successful!</b> Your message was sent successfully.'});
+      }else{
+        state.alerts.push({ type: 'danger', msg: '<b>Oh no!</b> Something worng while sending your email.'});
+      }
       $interval(function(){
-        state.result.show = false;
+        state.alerts.splice(0, 1);
       }, 5400);
     }
   }

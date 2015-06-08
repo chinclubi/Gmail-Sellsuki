@@ -2,82 +2,59 @@
 <html lang="en" ng-app="GmailSellsuki">
 <head>
   <title>Gmail API - Sellsuki</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"></link>
+  <link rel="shortcut icon" href="img/favicon32.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://getbootstrap.com/dist/css/bootstrap.min.css"></link>
   <link rel="stylesheet" href="css/index.css" media="screen" title="no title" charset="utf-8">
 </head>
 <body>
-<div class="container" ng-controller="appController" >
-  <div class="page-header">
-    <h4>Gmail API - Sellsuki <small>v0.2.4</small></h4>
-  </div>
-    <div class="text-center row" ng-hide="state.isLogin">
+  <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">
+          <img src="img/logo-header.png">
+        </a>
+      </div>
+      <div class="collapse navbar-collapse">
+        <p class="navbar-text navbar-right"><b>Gmail API - Sellsuki</b> v0.2.5</p>
+      </div>
+    </div>
+  </nav>
+  <div id="appCtr" class="container" ng-controller="appController" >
+    <div class="text-center row" ng-hide="inbox.isLogin">
       <button class="btn btn-danger" ng-click="checkAuth(false)">Login with Gmail</button>
     </div>
-    <div class="row" ng-show="state.isLogin">
-      <div class="col-md-7">
-          <div class="panel panel-primary">
-            <div class="panel-heading">
+    <div class="row" ng-show="inbox.isLogin">
+      <div class="panel panel-info">
+        <div class="panel-heading">
+          <div class="row">
+            <div class="col-md-8">
               Inbox
             </div>
-            <div class="slimScroll">
-              <table class="table">
-                <tr ng-repeat="email in emails track by $index">
-                  <td>
-                    {{$index + 1}}. <strong>{{email.From}}</strong><br>{{email.Subject}}
-                  </td>
-                </tr>
-                <tr ng-if="emails.length == 0">
-                  <td>
-                    <strong>No email in inbox.</strong>
-                  </td>
-                </tr>
-              </table>
+            <div class="text-right col-md-4" ng-show="inbox.canLoad">
+              <button autocomplete="off" class="btn btn-success btn-xs text-right" ng-disabled='inbox.loading[0]' ng-click="createInbox()">{{inbox.loading[1]}}</button>
+              <button autocomplete="off" class="btn btn-info btn-xs text-right" ng-click="sendMailModal()">Send Email</button>
             </div>
           </div>
-        <div class="text-center" ng-show="state.canLoad" style="line-height:4rem;">
-          <button autocomplete="off" class="btn btn-success" ng-disabled='state.loading[0]' ng-click="createInbox()">{{state.loading[1]}}</button>
         </div>
-      </div>
-      <div class="col-md-5" ng-controller="sendEmail">
-        <div class="panel panel-primary">
-          <div class="panel-heading">
-            Send Email
-          </div>
-          <div class="panel-body">
-            <form class="form-horizontal" ng-submit="sendMail()">
-              <div class="form-group">
-                <label for="receiver" class="col-sm-2 control-label">To</label>
-                <div class="col-sm-10">
-                  <input type="email" class="form-control" placeholder="example@gmail.com" name="receiver" ng-model="email.receiver" required>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="subject" class="col-sm-2 control-label">Subject</label>
-                <div class="col-sm-10">
-                  <input type="text" class="form-control" placeholder="Subject" name="subject" ng-model="email.subject" required>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="subject" class="col-sm-2 control-label"></label>
-                <div class="col-sm-10">
-                  <textarea class="form-control" rows="5" placeholder="Input some text" ng-model="email.message" required></textarea>
-                </div>
-              </div>
-              <div class="form-group">
-                <div class="col-sm-offset-2 col-sm-10">
-                  <button type="submit" class="btn btn-default" ng-disabled='state.sending[0]'>{{state.sending[1]}}</button>
-                </div>
-              </div>
-            </form>
-          </div>
+        <div class="slimScroll">
+          <table class="table table-hover">
+            <tbody>
+              <tr ng-click="detail()" ng-repeat="email in emails track by $index" style="cursor:pointer;">
+                <td>
+                  <h4 class="list-group-item-heading">{{email.Subject}}</h4>
+                  <p class="list-group-item-text">{{email.From}}</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="alert alert-success show-hide" role="alert" ng-show="state.result.show && state.result.isComplete"><b>Successful!</b> Your message was sent successfully</div>
-        <div class="alert alert-danger show-hide" role="alert" ng-show="state.result.show && !state.result.isComplete"><b>Oh no!</b> Something worng while sending your email</div>
       </div>
     </div>
   </div>
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
   <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+  <script src="https://code.angularjs.org/1.3.15/angular-sanitize.min.js" charset="utf-8"></script>
   <script type="text/javascript">
     $(function(){
       $('.slimScroll').slimscroll({
@@ -85,10 +62,11 @@
       });
     });
     function loadCallback(){
-      angular.element(".container").scope().checkAuth(true);
+      angular.element("#appCtr").scope().checkAuth(true);
     }
   </script>
   <script src="https://apis.google.com/js/client.js?onload=loadCallback"></script>
+  <script type="text/javascript" src="js/ui-bootstrap-tpls-0.13.0.min.js"></script>
   <script type="text/javascript" src="js/jquery.slimscroll.min.js"></script>
   <script type="text/javascript" src="js/index.js"></script>
 </body>
