@@ -24,7 +24,7 @@
     <div class="text-center row" ng-hide="inbox.isLogin">
       <button class="btn btn-danger" ng-click="checkAuth(false)">Login with Gmail</button>
     </div>
-    <div class="row" ng-show="inbox.isLogin">
+    <div ng-show="inbox.isLogin">
       <div class="panel panel-info">
         <div class="panel-heading">
           <div class="row">
@@ -40,10 +40,16 @@
         <div class="slimScroll">
           <table class="table table-hover">
             <tbody>
-              <tr ng-click="detail()" ng-repeat="email in emails track by $index" style="cursor:pointer;">
-                <td>
-                  <h4 class="list-group-item-heading">{{email.Subject}}</h4>
-                  <p class="list-group-item-text">{{email.From}}</p>
+              <tr ng-click="detail($index)" ng-repeat="thread in threads track by $index" style="cursor:pointer;">
+                <td ng-init="msg = thread.messages[thread.messages.length-1]">
+                  <h4 class="list-group-item-heading" style="white-space: nowrap; overflow:hidden;">
+                    {{msg.payload.headers[2].value}}
+                    <small> - <span ng-bind-html="msg.snippet"></span></small>
+                  </h4>
+                  <p class="list-group-item-text">
+                    {{msg.payload.headers[1].value}}
+                    <span class="badge" ng-if="thread.messages.length > 1 "> {{thread.messages.length}} </span>
+                  </p>
                 </td>
               </tr>
             </tbody>

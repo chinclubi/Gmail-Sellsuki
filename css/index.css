@@ -35,3 +35,14 @@ body {
 .show-hide .ng-hide{
   opacity: 0;
 }
+
+.inbox {
+    transition: -webkit-transform 200ms linear;
+    transition: transform 200ms linear;
+}
+
+.inbox.slide {
+    -webkit-transform: translateX(-556px);
+    -ms-transform: translateX(-556px);
+    transform: translateX(-556px);
+}

@@ -4,8 +4,10 @@ app.controller('appController', ['$scope', '$modal', 'showState', function($scop
   $scope.clientId = '331691048436-q1g7qk6qf50hvg896regfa2pdv0n1q6h.apps.googleusercontent.com';
   $scope.scopes = ['https://mail.google.com/', 'https://www.google.com/m8/feeds'];
   $scope.nextPage = '';
-  $scope.emails = [];
+  $scope.threads = [];
   $scope.inbox = showState.init();
+
+  $scope.css = {readStyle: '', addRow: ''}
 
   $scope.checkAuth = function checkAuth(immediate){
     gapi.auth.authorize({
@@ -19,6 +21,7 @@ app.controller('appController', ['$scope', '$modal', 'showState', function($scop
     $scope.$apply(function(){
       if(res && !res.error){
         showState.isLogin(true);
+        showState.isLoading(true);
         gapi.client.load('gmail', 'v1', $scope.createInbox);
       }else{
         showState.isLogin(false);
@@ -27,21 +30,33 @@ app.controller('appController', ['$scope', '$modal', 'showState', function($scop
   }
 
   $scope.createInbox = function(){
-
     showState.isLoading(true);
-    $scope.findMessageList( function(result){
+    $scope.findThreadList( function(result){
 
-      angular.forEach(result.messages, function(value, key){
-        $scope.getMessage(value.id, $scope.findMessageDetail);
+      angular.forEach(result.threads, function(value, key){
+        $scope.getThreads(value.id, $scope.findThreadsDetail);
+
+        if( key == result.threads.length - 1){
+          showState.isLoading(false);
+        }
       });
-
-      $scope.nextPage = result.nextPageToken;
-      if(typeof $scope.nextPage == 'undefined'){
-        $scope.$apply(function(){
+      $scope.$apply(function(){
+        $scope.nextPage = result.nextPageToken;
+        if(typeof $scope.nextPage == 'undefined'){
           showState.canLoad(false);
-        });
-      }
+        }
+      });
+    });
+  }
 
+  $scope.findThreadsDetail = function(res){
+    $scope.$apply(function(){
+      angular.forEach(res.messages, function(value, key){
+        value.payload.headers.sort(function(a, b){
+          return a.name > b.name ? 1 : (a.name < b.name ? -1 : 0);
+        });
+      });
+      $scope.threads.push(res);
     });
   }
 
@@ -58,31 +73,28 @@ app.controller('appController', ['$scope', '$modal', 'showState', function($scop
       }
       if(n==2) break;
     }
-
-    $scope.$apply(function(){
-      $scope.emails.push(tmp);
-      showState.isLoading(false);
-    });
+    return tmp;
   }
 
-  $scope.findMessageList = function(callback){
-
+  $scope.findThreadList = function(callback){
     if (typeof $scope.nextPage != 'undefined'){
-      var request = gapi.client.gmail.users.messages.list({
+      var request = gapi.client.gmail.users.threads.list({
         'userId': 'me',
         'maxResults': 10,
         'pageToken' : $scope.nextPage,
-        'q' : ''
+        'q' : '',
+        'fields' : 'nextPageToken,threads/id'
       });
       request.execute(callback);
     }
-
   }
 
-  $scope.getMessage = function(messageId, callback) {
-    var request = gapi.client.gmail.users.messages.get({
+  $scope.getThreads = function(threadId, callback) {
+    var request = gapi.client.gmail.users.threads.get({
       'userId': 'me',
-      'id': messageId
+      'id': threadId,
+      'format': 'metadata',
+      'metadataHeaders': ['From', 'To', 'Subject', 'Date']
     });
     request.execute(callback);
   }
@@ -96,8 +108,15 @@ app.controller('appController', ['$scope', '$modal', 'showState', function($scop
     });
   }
 
-  $scope.detail = function(){
-    console.log('xxxxxx');
+  $scope.detail = function(n){
+    if($scope.css.readStyle != ''){
+      $scope.css.readStyle = '';
+      $scope.css.addRow = '';
+    }else{
+      $scope.css.readStyle = 'slide col-md-6';
+      $scope.css.addRow = 'row';
+    }
+
   }
 }]);
 
