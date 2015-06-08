@@ -2,7 +2,7 @@ var app = angular.module('GmailSellsuki', ['state']);
 app.controller('appController', ['$scope', 'showState', function($scope, showState){
 
   $scope.clientId = '331691048436-q1g7qk6qf50hvg896regfa2pdv0n1q6h.apps.googleusercontent.com';
-  $scope.scopes = ['https://mail.google.com/'];
+  $scope.scopes = ['https://mail.google.com/', 'https://www.googleapis.com/auth/contacts.readonly'];
   $scope.nextPage = '';
   $scope.emails = [];
   $scope.state = showState.init();
