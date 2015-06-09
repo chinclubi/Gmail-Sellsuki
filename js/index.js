@@ -1,13 +1,11 @@
 var app = angular.module('GmailSellsuki', ['ui.bootstrap', 'state', 'ngSanitize']);
-app.controller('appController', ['$scope', '$modal', 'showState', function($scope, $modal, showState){
+app.controller('appController', ['$scope', '$q', '$modal', 'showState', function($scope, $q, $modal, showState){
 
   $scope.clientId = '331691048436-q1g7qk6qf50hvg896regfa2pdv0n1q6h.apps.googleusercontent.com';
   $scope.scopes = ['https://mail.google.com/', 'https://www.google.com/m8/feeds'];
   $scope.nextPage = '';
-  $scope.threads = [];
+  $scope.inboxData = [];
   $scope.inbox = showState.init();
-
-  $scope.css = {readStyle: '', addRow: ''}
 
   $scope.checkAuth = function checkAuth(immediate){
     gapi.auth.authorize({
@@ -30,16 +28,30 @@ app.controller('appController', ['$scope', '$modal', 'showState', function($scop
   }
 
   $scope.createInbox = function(){
+
     showState.isLoading(true);
     $scope.findThreadList( function(result){
 
-      angular.forEach(result.threads, function(value, key){
-        $scope.getThreads(value.id, $scope.findThreadsDetail);
+      var p = [];
 
-        if( key == result.threads.length - 1){
+      angular.forEach(result.threads, function(value, key){
+        var defferred = $q.defer();
+        $scope.getThreads(value.id, function(res){
+          angular.forEach(res.messages, function(value, key){
+            $scope.payloadFac(value);
+          });
+          defferred.resolve(res);
+        });
+        p.push(defferred.promise);
+      });
+
+      $q.all(p).then(function(res){
+        if(res && !res.error){
+          $scope.inboxData.push.apply($scope.inboxData, res);
           showState.isLoading(false);
         }
       });
+
       $scope.$apply(function(){
         $scope.nextPage = result.nextPageToken;
         if(typeof $scope.nextPage == 'undefined'){
@@ -49,31 +61,27 @@ app.controller('appController', ['$scope', '$modal', 'showState', function($scop
     });
   }
 
-  $scope.findThreadsDetail = function(res){
-    $scope.$apply(function(){
-      angular.forEach(res.messages, function(value, key){
-        value.payload.headers.sort(function(a, b){
-          return a.name > b.name ? 1 : (a.name < b.name ? -1 : 0);
-        });
-      });
-      $scope.threads.push(res);
-    });
-  }
-
-  $scope.findMessageDetail = function(res){
-    var tmp = {}, n = 0, header = res.payload.headers;
+  $scope.payloadFac = function(msg){
+    var tmp = {}, n = 0, header = msg.payload.headers;
     for(var i=0; i < header.length ; i++){
       if(header[i].name == 'Subject'){
         tmp.Subject = header[i].value;
-        n++;
       }
       if(header[i].name == 'From'){
-        tmp.From = header[i].value;
-        n++;
+        tmp.From = {};
+        tmp.From.name = header[i].value.match(/^.*(?=<)/g);
+        tmp.From.email = header[i].value.match(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g);
       }
-      if(n==2) break;
+      if(header[i].name == 'To'){
+        tmp.To = {};
+        tmp.To.name = header[i].value.match(/^.*(?=<)/g);
+        tmp.To.email = header[i].value.match(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g);
+      }
+      if(header[i].name == 'Date'){
+        tmp.Date = new Date(header[i].value);
+      }
     }
-    return tmp;
+    msg.payload.headers = tmp;
   }
 
   $scope.findThreadList = function(callback){
@@ -82,8 +90,7 @@ app.controller('appController', ['$scope', '$modal', 'showState', function($scop
         'userId': 'me',
         'maxResults': 10,
         'pageToken' : $scope.nextPage,
-        'q' : '',
-        'fields' : 'nextPageToken,threads/id'
+        'q' : 'label:inbox !label:Updates !label:Social !label:Promotions !label:Forums'
       });
       request.execute(callback);
     }
@@ -109,14 +116,7 @@ app.controller('appController', ['$scope', '$modal', 'showState', function($scop
   }
 
   $scope.detail = function(n){
-    if($scope.css.readStyle != ''){
-      $scope.css.readStyle = '';
-      $scope.css.addRow = '';
-    }else{
-      $scope.css.readStyle = 'slide col-md-6';
-      $scope.css.addRow = 'row';
-    }
-
+    console.log('xxxxxx');
   }
 }]);
 
