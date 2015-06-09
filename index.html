@@ -37,34 +37,50 @@
             </div>
           </div>
         </div>
-        <div class="slimScroll">
-          <table class="table table-hover">
-            <tbody>
-              <tr ng-if="!inbox.loading[0]" ng-click="detail($index)" ng-repeat="thread in inboxData track by $index | orderBy: '-historyId'" style="cursor:pointer;">
-                <td ng-init="msg = thread.messages[thread.messages.length-1]">
-                  <h4 class="list-group-item-heading" style="white-space: nowrap; overflow:hidden;">
-                    {{msg.payload.headers.Subject}}
-                    <small ng-if="thread.snippet != ''"> - <span ng-bind-html="msg.snippet"></span></small>
-                  </h4>
-                  <p class="list-group-item-text">
-                    <span ng-if="msg.payload.headers.From.name[0] != null">{{msg.payload.headers.From.name[0]}}</span>
-                    <span ng-if="msg.payload.headers.From.name[0] == null">{{msg.payload.headers.From.email[0]}}</span>
-                    <span class="badge" ng-if="thread.messages.length > 1 "> {{thread.messages.length}} </span>
-                  </p>
-                </td>
-              </tr>
-              <tr ng-if="inbox.loading[0]">
-                <td>
-                  <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...
-                </td>
-              </tr>
-              <tr ng-if="inboxData.length == 0 && !inbox.loading[0]">
-                <td>
-                  Inbox is empty.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="containt" ng-controller="readController">
+          <div class="inbox" ng-hide="isRead">
+            <div class="slimScroll">
+              <table class="table table-hover">
+                <tbody>
+                  <tr ng-click="detail(thread.id)" ng-repeat="thread in inboxData track by $index | orderBy: '-historyId'" style="cursor:pointer;">
+                    <td ng-init="msg = thread.messages[thread.messages.length-1]">
+                      <h4 class="list-group-item-heading" style="white-space: nowrap; overflow:hidden;">
+                        {{msg.payload.headers.Subject}}
+                        <small ng-if="thread.snippet != ''"> - <span ng-bind-html="msg.snippet"></span></small>
+                      </h4>
+                      <p class="list-group-item-text">
+                        <span ng-if="msg.payload.headers.From.name[0] != null">{{msg.payload.headers.From.name[0]}}</span>
+                        <span ng-if="msg.payload.headers.From.name[0] == null">{{msg.payload.headers.From.email[0]}}</span>
+                        <span class="badge" ng-if="thread.messages.length > 1 "> {{thread.messages.length}} </span>
+                      </p>
+                    </td>
+                  </tr>
+                  <tr ng-if="inbox.loading[0]">
+                    <td>
+                      <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...
+                    </td>
+                  </tr>
+                  <tr ng-if="inboxData.length == 0 && !inbox.loading[0]">
+                    <td>
+                      Inbox is empty.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="readMessage" ng-show="isRead">
+            <ul class="nav nav-tabs nav-justified">
+              <li ng-click="getBack()" role="presentation">
+                <a href="#">
+                  <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span> Back
+                </a>
+              </li>
+            </ul>
+            <div class="panel-body">
+              <span ng-show="loadingMessage"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -75,7 +91,7 @@
   <script type="text/javascript">
     $(function(){
       $('.slimScroll').slimscroll({
-        height: '60rem'
+        height: '75rem'
       });
     });
     function loadCallback(){

@@ -49,6 +49,7 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', function
         if(res && !res.error){
           $scope.inboxData.push.apply($scope.inboxData, res);
           showState.isLoading(false);
+          console.log(res);
         }
       });
 
@@ -114,10 +115,6 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', function
       size: ''
     });
   }
-
-  $scope.detail = function(n){
-    console.log('xxxxxx');
-  }
 }]);
 
 app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', function($scope, $modalInstance, sendState){
@@ -169,6 +166,45 @@ app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', function($
     $modalInstance.dismiss();
   }
 }]);
+
+app.controller('readController',['$scope', function($scope){
+
+  $scope.isRead = false;
+  $scope.fullThread = [];
+  $scope.loadingMessage = false;
+
+  $scope.detail = function(threadId){
+    $scope.isRead = true;
+    $scope.loadingMessage = true;
+    if(typeof $scope.fullThread[threadId] == 'undefined'){
+      $scope.getFullThreads(threadId, function(result){
+        console.log(result);
+        $scope.fullThread[threadId] = result;
+        $scope.$apply(function(){
+          $scope.loadingMessage = false;
+        });
+      });
+    }else{
+      console.log($scope.fullThread[threadId]);
+      $scope.loadingMessage = false;
+    }
+  }
+
+  $scope.getBack = function(){
+    $scope.isRead = false;
+  }
+
+  $scope.getFullThreads = function(threadId, callback) {
+    var request = gapi.client.gmail.users.threads.get({
+      'userId': 'me',
+      'id': threadId,
+      'format': 'full',
+      'fields' : 'messages(historyId,id,payload,raw)'
+    });
+    request.execute(callback);
+  }
+}]);
+
 angular.module('state', []).factory('showState', function(){
 
   var state = { isLogin: false, canLoad: true, loading: [ false, 'Load More']};

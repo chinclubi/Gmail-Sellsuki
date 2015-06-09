@@ -32,6 +32,9 @@ body {
   opacity: 1;
 }
 
+.table{
+  margin-bottom: 0px;
+}
 .show-hide .ng-hide{
   opacity: 0;
 }
