@@ -49,7 +49,6 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', function
         if(res && !res.error){
           $scope.inboxData.push.apply($scope.inboxData, res);
           showState.isLoading(false);
-          console.log(res);
         }
       });
 
@@ -172,20 +171,45 @@ app.controller('readController',['$scope', function($scope){
   $scope.isRead = false;
   $scope.fullThread = [];
   $scope.loadingMessage = false;
-
-  $scope.detail = function(threadId){
+  $scope.htmlBody = '';
+  $scope.detail = function(thread){
     $scope.isRead = true;
     $scope.loadingMessage = true;
-    if(typeof $scope.fullThread[threadId] == 'undefined'){
-      $scope.getFullThreads(threadId, function(result){
-        console.log(result);
-        $scope.fullThread[threadId] = result;
+    if(typeof $scope.fullThread[thread.id] == 'undefined'){
+      $scope.getFullThreads(thread.id, function(result){
+        // console.log(result);
+        angular.forEach(thread.messages, function(message, key){
+          var payload = result.messages[key].payload;
+          message.payload.body = payload.body.data;
+          message.payload.mimeType = payload.mimeType;
+          message.payload.parts = [];
+          angular.forEach(payload.parts, function(item, _key){
+            message.payload.parts[_key] = {};
+            message.payload.parts[_key].body = payload.parts[_key].body.data;
+            message.payload.parts[_key].mimeType = payload.parts[_key].mimeType;
+          });
+        });
+        //Test Decode base64
+        var msg64 = [];
+        angular.forEach(thread.messages, function(message, n){
+          if(typeof message.payload.body != 'undefined'){
+            msg64.push(atob(message.payload.body));
+          }else{
+            msg64.push(atob(message.payload.parts[1].body.replace(/\-/g, '+').replace(/\_/g, '/')));
+          }
+        })
+        console.log(thread.messages);
+        // var msg64 = (thread.messages[0].payload.parts[1].body).replace(/\-/g, '+').replace(/\_/g, '/');
+
+        $scope.fullThread[thread.id] = thread;
         $scope.$apply(function(){
+          $scope.htmlBody = msg64;
           $scope.loadingMessage = false;
         });
+        // End Test
       });
     }else{
-      console.log($scope.fullThread[threadId]);
+      // console.log($scope.fullThread[thread.id]);
       $scope.loadingMessage = false;
     }
   }
@@ -199,7 +223,7 @@ app.controller('readController',['$scope', function($scope){
       'userId': 'me',
       'id': threadId,
       'format': 'full',
-      'fields' : 'messages(historyId,id,payload,raw)'
+      'fields' : 'messages(id,payload,raw)'
     });
     request.execute(callback);
   }

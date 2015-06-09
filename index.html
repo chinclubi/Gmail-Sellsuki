@@ -42,7 +42,7 @@
             <div class="slimScroll">
               <table class="table table-hover">
                 <tbody>
-                  <tr ng-click="detail(thread.id)" ng-repeat="thread in inboxData track by $index | orderBy: '-historyId'" style="cursor:pointer;">
+                  <tr ng-click="detail(thread)" ng-repeat="thread in inboxData track by $index | orderBy: '-historyId'" style="cursor:pointer;">
                     <td ng-init="msg = thread.messages[thread.messages.length-1]">
                       <h4 class="list-group-item-heading" style="white-space: nowrap; overflow:hidden;">
                         {{msg.payload.headers.Subject}}
@@ -79,6 +79,12 @@
             </ul>
             <div class="panel-body">
               <span ng-show="loadingMessage"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...</span>
+              <div ng-hide="loadingMessage" ng-repeat="msg in htmlBody">
+                <div class="page-header">
+                  <h1>Example page header <small>Subtext for header</small></h1>
+                </div>
+                <span ng-bind-html="msg"></span>
+              </div>
             </div>
           </div>
         </div>
