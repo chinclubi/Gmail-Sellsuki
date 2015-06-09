@@ -90,7 +90,7 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', function
         'userId': 'me',
         'maxResults': 10,
         'pageToken' : $scope.nextPage,
-        'q' : 'label:inbox !label:Updates !label:Social !label:Promotions !label:Forums'
+        'q' : ''
       });
       request.execute(callback);
     }
