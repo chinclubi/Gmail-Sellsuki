@@ -1,10 +1,10 @@
 var app = angular.module('GmailSellsuki', ['ui.bootstrap', 'state', 'ngSanitize']);
-app.controller('appController', ['$scope', '$q', '$modal', 'showState', function($scope, $q, $modal, showState){
+app.controller('appController', ['$scope', '$q', '$modal', 'showState', 'inbox', function($scope, $q, $modal, showState, inbox){
 
   $scope.clientId = '331691048436-q1g7qk6qf50hvg896regfa2pdv0n1q6h.apps.googleusercontent.com';
   $scope.scopes = ['https://mail.google.com/', 'https://www.google.com/m8/feeds'];
   $scope.nextPage = '';
-  $scope.inboxData = [];
+  $scope.threads = inbox.threadList();
   $scope.inbox = showState.init();
 
   $scope.checkAuth = function checkAuth(immediate){
@@ -47,7 +47,7 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', function
 
       $q.all(p).then(function(res){
         if(res && !res.error){
-          $scope.inboxData.push.apply($scope.inboxData, res);
+          $scope.threads.push.apply($scope.threads, res);
         }
         showState.isLoading(false);
       });
@@ -116,7 +116,7 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', function
   }
 }]);
 
-app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', function($scope, $modalInstance, sendState){
+app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', 'inbox', function($scope, $modalInstance, sendState, inbox){
 
   $scope.email = this.email;
   $scope.state = sendState.init();
@@ -126,33 +126,16 @@ app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', function($
     var result = gapi.client.gmail.users.getProfile({
       userId : 'me'
     });
-    result.execute($scope.getProfile);
-  }
-
-  $scope.getProfile = function(res){
-    $scope.email.sender = res.emailAddress;
-    var emailLine = [];
-    emailLine.push("From: Sellsuki <"+$scope.email.sender+">");
-    emailLine.push("To: "+$scope.email.receiver);
-    emailLine.push("Subject: "+$scope.email.subject);
-    emailLine.push("");
-    emailLine.push($scope.email.message);
-
-    var mail = emailLine.join("\r\n").trim();
-    var base64EncodedEmail = btoa(unescape(encodeURIComponent(mail))).replace(/\+/g, '-').replace(/\//g, '_');
-
-    var requestEmail = gapi.client.gmail.users.messages.send({
-      userId: 'me',
-      resource: {
-        raw: base64EncodedEmail
-      }
+    result.execute(function(res){
+      $scope.email.sender = res.emailAddress;
+      var tmp = {sender: $scope.email.sender, to: $scope.email.receiver, subject: $scope.email.subject, message: $scope.email.body};
+      inbox.sendMail('', tmp, $scope.sendMailResult);
     });
-    requestEmail.execute($scope.requestEmail);
   }
 
-  $scope.requestEmail = function(res){
+  $scope.sendMailResult = function(result){
     $scope.$apply(function(){
-      if(res && !res.error){
+      if(result && !result.error){
         sendState.alerts(true);
       }else{
         sendState.alerts(false);
@@ -166,36 +149,39 @@ app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', function($
   }
 }]);
 
-app.controller('readController',['$scope', '$sce', 'sendState', function($scope, $sce, sendState){
+app.controller('readController',['$scope', '$sce', 'sendState', 'inbox', function($scope, $sce, sendState, inbox){
 
   $scope.isRead = false;
-  $scope.fullThread = [];
   $scope.loadingMessage = false;
-  $scope.currentThreadId = '';
+  $scope.currentThreadIndex = '';
   $scope.state = sendState.init();
 
   $scope.trustAsHtml = function(string) {
     return $sce.trustAsHtml(string);
   };
 
-  $scope.detail = function(thread){
-    $scope.currentThreadId = thread.id;
+  $scope.loadThreadDetail = function(index){
+    var currentThread = inbox.threadList()[index];
+    $scope.currentThreadIndex = index;
     $scope.isRead = true;
     $scope.loadingMessage = true;
-    if(typeof $scope.fullThread[thread.id] == 'undefined'){
-      $scope.getFullThreads(thread.id, function(result){
-        angular.forEach(thread.messages, function(message, key){
+    if(typeof currentThread.messages[0].body == 'undefined'){
+      $scope.getFullThreads(currentThread.id, function(result){
+        angular.forEach(currentThread.messages, function(message, key){
           var payload = result.messages[key].payload;
           var body = '';
           if(typeof payload.body.data != 'undefined'){
             body = payload.body.data;
           }else{
-            body = payload.parts[1].body.data;
+            if(typeof payload.parts[1] != 'undefined'){
+              body = payload.parts[1].body.data;
+            }else{
+              body = payload.parts[0].body.data;
+            }
           }
           body = body.replace(/\-/g, '+').replace(/\_/g, '/');
           message.body = decodeURIComponent(escape(atob(body))).replace(/\n/g,'<br>');
         });
-        $scope.fullThread[thread.id] = thread;
         $scope.$apply(function(){
           $scope.loadingMessage = false;
         });
@@ -210,49 +196,39 @@ app.controller('readController',['$scope', '$sce', 'sendState', function($scope,
   }
 
   $scope.getThread = function(){
-    return $scope.fullThread[$scope.currentThreadId];
+    return inbox.threadList()[$scope.currentThreadIndex];
   }
 
   $scope.reply = function(){
     sendState.isSending(true);
-    var threadId = $scope.fullThread[$scope.currentThreadId].id;
-    var subject = $scope.fullThread[$scope.currentThreadId].messages[0].payload.headers.Subject;
+    var currentThread = $scope.getThread();
+    var tmp = {};
+    var threadId = currentThread.id;
+    tmp.subject = currentThread.messages[0].payload.headers.Subject;
     var result = gapi.client.gmail.users.getProfile({
       userId : 'me'
     });
     result.execute(function(res){
-      var sender = res.emailAddress;
-      var to = $scope.fullThread[$scope.currentThreadId].messages[0].payload.headers.To.email[0];
-      if(to == sender){
-        to = $scope.fullThread[$scope.currentThreadId].messages[0].payload.headers.From.email[0];
+      tmp.sender = res.emailAddress;
+      tmp.to = currentThread.messages[0].payload.headers.To.email[0];
+      if(tmp.to == tmp.sender){
+        tmp.to = currentThread.messages[0].payload.headers.From.email[0];
       }
-      var emailLine = [];
-      emailLine.push("From: Sellsuki <"+sender+">");
-      emailLine.push("To: "+to);
-      emailLine.push("Subject: "+subject);
-      emailLine.push("");
-      emailLine.push($scope.replyMsg);
+      tmp.message = $scope.replyMsg;
+      inbox.sendMail(threadId, tmp, $scope.sendMailResult);
+    });
+  }
 
-      var mail = emailLine.join("\r\n").trim();
-      var base64EncodedEmail = btoa(unescape(encodeURIComponent(mail))).replace(/\+/g, '-').replace(/\//g, '_');
-
-      var requestEmail = gapi.client.gmail.users.messages.send({
-        userId: 'me',
-        resource: {
-          raw: base64EncodedEmail,
-          threadId: threadId
-        }
-      });
-      requestEmail.execute(function(result){
-        $scope.$apply(function(){
-          if(res && !res.error){
-            sendState.alerts(true);
-          }else{
-            sendState.alerts(false);
-          }
-          sendState.isSending(false);
-        });
-      });
+  $scope.sendMailResult = function(result){
+    $scope.$apply(function(){
+      if(result && !result.error){
+        sendState.alerts(true);
+        $scope.replyMsg = '';
+      }else{
+        sendState.alerts(false);
+        $scope.replyMsg = '';
+      }
+      sendState.isSending(false);
     });
   }
 
@@ -316,6 +292,36 @@ angular.module('state', []).factory('showState', function(){
       $interval(function(){
         state.alerts.splice(0, 1);
       }, 5400);
+    }
+  }
+
+}]).factory('inbox', ['sendState', function( sendState ){
+
+  var emailList = [];
+
+  return{
+    threadList : function(){
+      return emailList;
+    },
+    sendMail : function(threadId, messageDetail, callback){
+      var emailLine = [];
+      emailLine.push("From: Sellsuki <"+messageDetail.sender+">");
+      emailLine.push("To: "+messageDetail.to);
+      emailLine.push("Subject: "+messageDetail.subject);
+      emailLine.push("");
+      emailLine.push(messageDetail.message);
+
+      var mail = emailLine.join("\r\n").trim();
+      var base64EncodedEmail = btoa(unescape(encodeURIComponent(mail))).replace(/\+/g, '-').replace(/\//g, '_');
+
+      var requestEmail = gapi.client.gmail.users.messages.send({
+        userId: 'me',
+        resource: {
+          raw: base64EncodedEmail,
+          threadId: threadId
+        }
+      });
+      requestEmail.execute(callback);
     }
   }
 

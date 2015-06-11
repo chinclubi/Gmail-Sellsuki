@@ -17,7 +17,7 @@
         </a>
       </div>
       <div class="collapse navbar-collapse">
-        <p class="navbar-text navbar-right" style="margin-right: 0px;"><b>Gmail API - Sellsuki</b> v0.3.1</p>
+        <p class="navbar-text navbar-right" style="margin-right: 0px;"><b>Gmail API - Sellsuki</b> v0.3.2</p>
       </div>
     </div>
   </nav>
@@ -31,7 +31,7 @@
           <div class="slimScroll">
             <table class="table table-hover">
               <tbody>
-                <tr ng-click="detail(thread)" ng-repeat="thread in inboxData track by $index | orderBy: '-historyId'" style="cursor:pointer;">
+                <tr ng-click="loadThreadDetail($index)" ng-repeat="thread in threads track by $index | orderBy: '-historyId'" style="cursor:pointer;">
                   <td ng-init="msg = thread.messages[thread.messages.length-1]">
                     <h4 class="list-group-item-heading" style="white-space: nowrap; overflow:hidden;">
                       {{msg.payload.headers.Subject}}
@@ -44,7 +44,7 @@
                     </p>
                   </td>
                 </tr>
-                <tr ng-if="inboxData.length == 0 && !inbox.loading[0]">
+                <tr ng-if="threads.length == 0 && !inbox.loading[0]">
                   <td class="text-center">
                     Inbox is empty.
                   </td>
@@ -56,7 +56,7 @@
             </div>
           </div>
           <div class="panel-footer">
-            <button autocomplete="off" class="btn btn-success btn-block" ng-disabled='inbox.loading[0] || !inbox.canLoad' ng-click="createInbox()">{{inbox.loading[1]}}</button>
+            <button autocomplete="off" class="btn btn-warning btn-block" ng-disabled='inbox.loading[0] || !inbox.canLoad' ng-click="createInbox()">{{inbox.loading[1]}}</button>
             <button autocomplete="off" class="btn btn-info btn-block" ng-click="sendMailModal()">Send Email</button>
           </div>
         </div>
@@ -71,30 +71,32 @@
                 </a>
               </li>
             </ul>
-            <div class="slimScroll2">
-              <table class="table">
-                <tbody>
-                  <tr ng-repeat="msg in getThread().messages">
-                    <td>
-                      <div>
-                        <h3>{{msg.payload.headers.Subject}}</h3>
-                        <h4>{{msg.payload.headers.From.name[0]}} <small>to {{msg.payload.headers.To.email[0]}}</small></h4>
-                      </div><br/>
-                      <p data-ng-bind-html="trustAsHtml(msg.body)"></p>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <div class="panel-body">
-                <span ng-show="loadingMessage"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...</span>
+            <div class="Email" ng-hide="loadingMessage">
+              <div class="slimScroll2">
+                <table class="table">
+                  <tbody>
+                    <tr ng-repeat="msg in getThread().messages">
+                      <td>
+                        <div>
+                          <h3>{{msg.payload.headers.Subject}}</h3>
+                          <h4>{{msg.payload.headers.From.name[0]}} <small>to {{msg.payload.headers.To.email[0]}}</small></h4>
+                        </div><br/>
+                        <p data-ng-bind-html="trustAsHtml(msg.body)"></p>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
+            </div>
+            <div class="panel-body text-center" ng-show="loadingMessage">
+              <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...
             </div>
             <div class="panel-footer">
               <form ng-submit="reply()">
                 <div class="form-group">
                   <textarea class="form-control" rows="8" cols="40" ng-model="replyMsg" placeholder="Reply message.." required></textarea>
                 </div>
-                <button type="submit" class="btn btn-default" ng-disabled='state.sending[0]'>{{state.sending[1]}}</button>
+                <button type="submit" class="btn btn-default btn-block" ng-disabled='state.sending[0]'>{{state.sending[1]}}</button>
               </form>
               <alert class="alert-box" ng-repeat="alert in state.alerts" type="{{alert.type}}" ng-bind-html="alert.msg"></alert>
             </div>
