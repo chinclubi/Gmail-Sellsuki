@@ -166,12 +166,17 @@ app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', function($
   }
 }]);
 
-app.controller('readController',['$scope', function($scope){
+app.controller('readController',['$scope', '$sce', function($scope, $sce){
 
   $scope.isRead = false;
   $scope.fullThread = [];
   $scope.loadingMessage = false;
   $scope.htmlBody = '';
+
+  $scope.trustAsHtml = function(string) {
+    return $sce.trustAsHtml(string);
+  };
+
   $scope.detail = function(thread){
     $scope.isRead = true;
     $scope.loadingMessage = true;
@@ -192,24 +197,44 @@ app.controller('readController',['$scope', function($scope){
         //Test Decode base64
         var msg64 = [];
         angular.forEach(thread.messages, function(message, n){
+          var tmp = {};
           if(typeof message.payload.body != 'undefined'){
-            msg64.push(atob(message.payload.body));
+            tmp.body = decodeURIComponent(escape(atob(message.payload.body)));
+            // msg64.push(atob(message.payload.body));
           }else{
-            msg64.push(atob(message.payload.parts[1].body.replace(/\-/g, '+').replace(/\_/g, '/')));
+            tmp.body = decodeURIComponent(escape(atob(message.payload.parts[1].body.replace(/\-/g, '+').replace(/\_/g, '/'))));
+            // msg64.push(atob(message.payload.parts[1].body.replace(/\-/g, '+').replace(/\_/g, '/')));
           }
-        })
-        console.log(thread.messages);
+          tmp.payload = message.payload.headers;
+          msg64.push(tmp);
+        });
         // var msg64 = (thread.messages[0].payload.parts[1].body).replace(/\-/g, '+').replace(/\_/g, '/');
 
         $scope.fullThread[thread.id] = thread;
         $scope.$apply(function(){
           $scope.htmlBody = msg64;
+          // console.log($scope.htmlBody);
           $scope.loadingMessage = false;
         });
         // End Test
       });
     }else{
       // console.log($scope.fullThread[thread.id]);
+      var message = $scope.fullThread[thread.id].messages;
+      var msg64 = [];
+      angular.forEach(thread.messages, function(message, n){
+        var tmp = {};
+        if(typeof message.payload.body != 'undefined'){
+          tmp.body = decodeURIComponent(escape(atob(message.payload.body)));
+          // msg64.push(atob(message.payload.body));
+        }else{
+          tmp.body = decodeURIComponent(escape(atob(message.payload.parts[1].body.replace(/\-/g, '+').replace(/\_/g, '/'))));
+        }
+        console.log(tmp.body);
+        tmp.payload = message.payload.headers;
+        msg64.push(tmp);
+      });
+      $scope.htmlBody = msg64;
       $scope.loadingMessage = false;
     }
   }

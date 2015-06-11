@@ -4,6 +4,7 @@
   <title>Gmail API - Sellsuki</title>
   <link rel="shortcut icon" href="img/favicon32.ico">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
   <link rel="stylesheet" href="http://getbootstrap.com/dist/css/bootstrap.min.css"></link>
   <link rel="stylesheet" href="css/index.css" media="screen" title="no title" charset="utf-8">
 </head>
@@ -77,13 +78,15 @@
                 </a>
               </li>
             </ul>
-            <div class="panel-body">
-              <span ng-show="loadingMessage"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...</span>
-              <div ng-hide="loadingMessage" ng-repeat="msg in htmlBody">
-                <div class="page-header">
-                  <h1>Example page header <small>Subtext for header</small></h1>
+            <div class="slimScroll">
+              <div class="panel-body">
+                <span ng-show="loadingMessage"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...</span>
+                <div ng-hide="loadingMessage" ng-repeat="msg in htmlBody">
+                  <div class="page-header">
+                    <h1>{{msg.payload.From.name[0]}} <small>to {{msg.payload.To.email[0]}}</small></h1>
+                  </div>
+                  <span data-ng-bind-html="trustAsHtml(msg.body)"></span>
                 </div>
-                <span ng-bind-html="msg"></span>
               </div>
             </div>
           </div>
