@@ -173,12 +173,16 @@ app.controller('readController',['$scope', '$sce', 'sendState', 'inbox', functio
           if(typeof payload.body.data != 'undefined'){
             body = payload.body.data;
           }else{
+            if(typeof payload.parts[0] != 'undefined'){
+              if(typeof payload.parts[0].body.data != 'undefined')
+                body = payload.parts[0].body.data;
+            }
             if(typeof payload.parts[1] != 'undefined'){
-              body = payload.parts[1].body.data;
-            }else{
-              body = payload.parts[0].body.data;
+              if(typeof payload.parts[1].body.data != 'undefined')
+                body = payload.parts[1].body.data;
             }
           }
+          // console.log(payload);
           body = body.replace(/\-/g, '+').replace(/\_/g, '/');
           message.body = decodeURIComponent(escape(atob(body))).replace(/\n/g,'<br>');
         });
