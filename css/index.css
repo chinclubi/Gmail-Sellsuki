@@ -1,5 +1,22 @@
+html,body {
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
 body {
   padding-top: 70px;
+}
+
+.alert-box{
+  position: fixed;
+  top: 100px;
+  width: 500px;
+  left: 50%;
+  margin-left: -250px;
+  z-index: 1;
+}
+.table > tbody:first-child > tr:first-child td {
+  border-top: 0;
 }
 
 .glyphicon-refresh-animate {

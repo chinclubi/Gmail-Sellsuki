@@ -10,67 +10,60 @@
 </head>
 <body>
   <nav class="navbar navbar-default navbar-fixed-top">
-    <div class="container">
+    <div class="container-fluid">
       <div class="navbar-header">
         <a class="navbar-brand" href="#">
           <img src="img/logo-header.png">
         </a>
       </div>
       <div class="collapse navbar-collapse">
-        <p class="navbar-text navbar-right"><b>Gmail API - Sellsuki</b> v0.3.0</p>
+        <p class="navbar-text navbar-right" style="margin-right: 0px;"><b>Gmail API - Sellsuki</b> v0.3.1</p>
       </div>
     </div>
   </nav>
-  <div id="appCtr" class="container" ng-controller="appController" >
+  <div id="appCtr" class="container-fluid" ng-controller="appController" >
     <div class="text-center row" ng-hide="inbox.isLogin">
       <button class="btn btn-danger" ng-click="checkAuth(false)">Login with Gmail</button>
     </div>
-    <div ng-show="inbox.isLogin">
-      <div class="panel panel-info">
-        <div class="panel-heading">
-          <div class="row">
-            <div class="col-md-8">
-              Inbox
+    <div class="row" ng-controller="readController" ng-show="inbox.isLogin">
+      <div class="col-md-4">
+        <div class="panel panel-default">
+          <div class="slimScroll">
+            <table class="table table-hover">
+              <tbody>
+                <tr ng-click="detail(thread)" ng-repeat="thread in inboxData track by $index | orderBy: '-historyId'" style="cursor:pointer;">
+                  <td ng-init="msg = thread.messages[thread.messages.length-1]">
+                    <h4 class="list-group-item-heading" style="white-space: nowrap; overflow:hidden;">
+                      {{msg.payload.headers.Subject}}
+                      <small ng-if="thread.snippet != ''"> - <span ng-bind-html="msg.snippet"></span></small>
+                    </h4>
+                    <p class="list-group-item-text">
+                      <span ng-if="msg.payload.headers.From.name[0] != null">{{msg.payload.headers.From.name[0]}}</span>
+                      <span ng-if="msg.payload.headers.From.name[0] == null">{{msg.payload.headers.From.email[0]}}</span>
+                      <span class="badge" ng-if="thread.messages.length > 1 "> {{thread.messages.length}} </span>
+                    </p>
+                  </td>
+                </tr>
+                <tr ng-if="inboxData.length == 0 && !inbox.loading[0]">
+                  <td class="text-center">
+                    Inbox is empty.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="panel-body text-center" ng-if="inbox.loading[0]">
+              <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...
             </div>
-            <div class="text-right col-md-4">
-              <button autocomplete="off" class="btn btn-success btn-xs text-right" ng-show="inbox.canLoad" ng-disabled='inbox.loading[0]' ng-click="createInbox()">{{inbox.loading[1]}}</button>
-              <button autocomplete="off" class="btn btn-info btn-xs text-right" ng-click="sendMailModal()">Send Email</button>
-            </div>
+          </div>
+          <div class="panel-footer">
+            <button autocomplete="off" class="btn btn-success btn-block" ng-disabled='inbox.loading[0] || !inbox.canLoad' ng-click="createInbox()">{{inbox.loading[1]}}</button>
+            <button autocomplete="off" class="btn btn-info btn-block" ng-click="sendMailModal()">Send Email</button>
           </div>
         </div>
-        <div class="containt" ng-controller="readController">
-          <div class="inbox" ng-hide="isRead">
-            <div class="slimScroll">
-              <table class="table table-hover">
-                <tbody>
-                  <tr ng-click="detail(thread)" ng-repeat="thread in inboxData track by $index | orderBy: '-historyId'" style="cursor:pointer;">
-                    <td ng-init="msg = thread.messages[thread.messages.length-1]">
-                      <h4 class="list-group-item-heading" style="white-space: nowrap; overflow:hidden;">
-                        {{msg.payload.headers.Subject}}
-                        <small ng-if="thread.snippet != ''"> - <span ng-bind-html="msg.snippet"></span></small>
-                      </h4>
-                      <p class="list-group-item-text">
-                        <span ng-if="msg.payload.headers.From.name[0] != null">{{msg.payload.headers.From.name[0]}}</span>
-                        <span ng-if="msg.payload.headers.From.name[0] == null">{{msg.payload.headers.From.email[0]}}</span>
-                        <span class="badge" ng-if="thread.messages.length > 1 "> {{thread.messages.length}} </span>
-                      </p>
-                    </td>
-                  </tr>
-                  <tr ng-if="inbox.loading[0]">
-                    <td>
-                      <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...
-                    </td>
-                  </tr>
-                  <tr ng-if="inboxData.length == 0 && !inbox.loading[0]">
-                    <td>
-                      Inbox is empty.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="readMessage" ng-show="isRead">
+      </div>
+      <div class="col-md-8">
+        <div class="panel panel-default" ng-show="isRead">
+          <div class="readMessage">
             <ul class="nav nav-tabs nav-justified">
               <li ng-click="getBack()" role="presentation">
                 <a href="#">
@@ -79,25 +72,34 @@
               </li>
             </ul>
             <div class="slimScroll2">
+              <table class="table">
+                <tbody>
+                  <tr ng-repeat="msg in getThread().messages">
+                    <td>
+                      <div>
+                        <h3>{{msg.payload.headers.Subject}}</h3>
+                        <h4>{{msg.payload.headers.From.name[0]}} <small>to {{msg.payload.headers.To.email[0]}}</small></h4>
+                      </div><br/>
+                      <p data-ng-bind-html="trustAsHtml(msg.body)"></p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
               <div class="panel-body">
                 <span ng-show="loadingMessage"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...</span>
-                <div ng-hide="loadingMessage" ng-repeat="msg in getThread().messages">
-                  <h3>{{msg.payload.headers.Subject}}</h3>
-                  <h4>{{msg.payload.headers.From.name[0]}} <small>to {{msg.payload.headers.To.email[0]}}</small></h4><br/>
-                  <span data-ng-bind-html="trustAsHtml(msg.body)"></span>
-                  <hr>
-                </div>
               </div>
             </div>
             <div class="panel-footer">
-              Reply
-              <form class="form-horizontal" ng-submit="reply()">
-                <textarea class="form-control" rows="8" cols="40" ng-model="replyMsg" required=""></textarea>
+              <form ng-submit="reply()">
+                <div class="form-group">
+                  <textarea class="form-control" rows="8" cols="40" ng-model="replyMsg" placeholder="Reply message.." required></textarea>
+                </div>
                 <button type="submit" class="btn btn-default" ng-disabled='state.sending[0]'>{{state.sending[1]}}</button>
-                <br>
-                <alert ng-repeat="alert in state.alerts" type="{{alert.type}}" ng-bind-html="alert.msg"></alert>
               </form>
+              <alert class="alert-box" ng-repeat="alert in state.alerts" type="{{alert.type}}" ng-bind-html="alert.msg"></alert>
             </div>
+          </div>
+          <div class="readMessage" ng-hide="isRead">
           </div>
         </div>
       </div>
@@ -112,7 +114,7 @@
         height: '75rem'
       });
       $('.slimScroll2').slimscroll({
-        height: '45rem'
+        height: '56rem'
       });
     });
     function loadCallback(){
