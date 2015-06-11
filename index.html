@@ -17,7 +17,7 @@
         </a>
       </div>
       <div class="collapse navbar-collapse">
-        <p class="navbar-text navbar-right"><b>Gmail API - Sellsuki</b> v0.2.5</p>
+        <p class="navbar-text navbar-right"><b>Gmail API - Sellsuki</b> v0.3.0</p>
       </div>
     </div>
   </nav>
@@ -78,16 +78,25 @@
                 </a>
               </li>
             </ul>
-            <div class="slimScroll">
+            <div class="slimScroll2">
               <div class="panel-body">
                 <span ng-show="loadingMessage"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span> Loading...</span>
-                <div ng-hide="loadingMessage" ng-repeat="msg in htmlBody">
-                  <div class="page-header">
-                    <h1>{{msg.payload.From.name[0]}} <small>to {{msg.payload.To.email[0]}}</small></h1>
-                  </div>
+                <div ng-hide="loadingMessage" ng-repeat="msg in getThread().messages">
+                  <h3>{{msg.payload.headers.Subject}}</h3>
+                  <h4>{{msg.payload.headers.From.name[0]}} <small>to {{msg.payload.headers.To.email[0]}}</small></h4><br/>
                   <span data-ng-bind-html="trustAsHtml(msg.body)"></span>
+                  <hr>
                 </div>
               </div>
+            </div>
+            <div class="panel-footer">
+              Reply
+              <form class="form-horizontal" ng-submit="reply()">
+                <textarea class="form-control" rows="8" cols="40" ng-model="replyMsg" required=""></textarea>
+                <button type="submit" class="btn btn-default" ng-disabled='state.sending[0]'>{{state.sending[1]}}</button>
+                <br>
+                <alert ng-repeat="alert in state.alerts" type="{{alert.type}}" ng-bind-html="alert.msg"></alert>
+              </form>
             </div>
           </div>
         </div>
@@ -101,6 +110,9 @@
     $(function(){
       $('.slimScroll').slimscroll({
         height: '75rem'
+      });
+      $('.slimScroll2').slimscroll({
+        height: '45rem'
       });
     });
     function loadCallback(){

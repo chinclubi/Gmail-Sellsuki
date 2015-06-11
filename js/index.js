@@ -48,8 +48,8 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', function
       $q.all(p).then(function(res){
         if(res && !res.error){
           $scope.inboxData.push.apply($scope.inboxData, res);
-          showState.isLoading(false);
         }
+        showState.isLoading(false);
       });
 
       $scope.$apply(function(){
@@ -90,7 +90,7 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', function
         'userId': 'me',
         'maxResults': 10,
         'pageToken' : $scope.nextPage,
-        'q' : ''
+        'q' : 'label:inbox !label:updates !label:social !label:promotions !label:forums'
       });
       request.execute(callback);
     }
@@ -166,81 +166,94 @@ app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', function($
   }
 }]);
 
-app.controller('readController',['$scope', '$sce', function($scope, $sce){
+app.controller('readController',['$scope', '$sce', 'sendState', function($scope, $sce, sendState){
 
   $scope.isRead = false;
   $scope.fullThread = [];
   $scope.loadingMessage = false;
-  $scope.htmlBody = '';
+  $scope.currentThreadId = '';
+  $scope.state = sendState.init();
 
   $scope.trustAsHtml = function(string) {
     return $sce.trustAsHtml(string);
   };
 
   $scope.detail = function(thread){
+    $scope.currentThreadId = thread.id;
     $scope.isRead = true;
     $scope.loadingMessage = true;
     if(typeof $scope.fullThread[thread.id] == 'undefined'){
       $scope.getFullThreads(thread.id, function(result){
-        // console.log(result);
         angular.forEach(thread.messages, function(message, key){
           var payload = result.messages[key].payload;
-          message.payload.body = payload.body.data;
-          message.payload.mimeType = payload.mimeType;
-          message.payload.parts = [];
-          angular.forEach(payload.parts, function(item, _key){
-            message.payload.parts[_key] = {};
-            message.payload.parts[_key].body = payload.parts[_key].body.data;
-            message.payload.parts[_key].mimeType = payload.parts[_key].mimeType;
-          });
-        });
-        //Test Decode base64
-        var msg64 = [];
-        angular.forEach(thread.messages, function(message, n){
-          var tmp = {};
-          if(typeof message.payload.body != 'undefined'){
-            tmp.body = decodeURIComponent(escape(atob(message.payload.body)));
-            // msg64.push(atob(message.payload.body));
+          var body = '';
+          if(typeof payload.body.data != 'undefined'){
+            body = payload.body.data;
           }else{
-            tmp.body = decodeURIComponent(escape(atob(message.payload.parts[1].body.replace(/\-/g, '+').replace(/\_/g, '/'))));
-            // msg64.push(atob(message.payload.parts[1].body.replace(/\-/g, '+').replace(/\_/g, '/')));
+            body = payload.parts[1].body.data;
           }
-          tmp.payload = message.payload.headers;
-          msg64.push(tmp);
+          body = body.replace(/\-/g, '+').replace(/\_/g, '/');
+          message.body = decodeURIComponent(escape(atob(body))).replace(/\n/g,'<br>');
         });
-        // var msg64 = (thread.messages[0].payload.parts[1].body).replace(/\-/g, '+').replace(/\_/g, '/');
-
         $scope.fullThread[thread.id] = thread;
         $scope.$apply(function(){
-          $scope.htmlBody = msg64;
-          // console.log($scope.htmlBody);
           $scope.loadingMessage = false;
         });
-        // End Test
       });
     }else{
-      // console.log($scope.fullThread[thread.id]);
-      var message = $scope.fullThread[thread.id].messages;
-      var msg64 = [];
-      angular.forEach(thread.messages, function(message, n){
-        var tmp = {};
-        if(typeof message.payload.body != 'undefined'){
-          tmp.body = decodeURIComponent(escape(atob(message.payload.body)));
-          // msg64.push(atob(message.payload.body));
-        }else{
-          tmp.body = decodeURIComponent(escape(atob(message.payload.parts[1].body.replace(/\-/g, '+').replace(/\_/g, '/'))));
-        }
-        console.log(tmp.body);
-        tmp.payload = message.payload.headers;
-        msg64.push(tmp);
-      });
-      $scope.htmlBody = msg64;
       $scope.loadingMessage = false;
     }
   }
 
   $scope.getBack = function(){
     $scope.isRead = false;
+  }
+
+  $scope.getThread = function(){
+    return $scope.fullThread[$scope.currentThreadId];
+  }
+
+  $scope.reply = function(){
+    sendState.isSending(true);
+    var threadId = $scope.fullThread[$scope.currentThreadId].id;
+    var subject = $scope.fullThread[$scope.currentThreadId].messages[0].payload.headers.Subject;
+    var result = gapi.client.gmail.users.getProfile({
+      userId : 'me'
+    });
+    result.execute(function(res){
+      var sender = res.emailAddress;
+      var to = $scope.fullThread[$scope.currentThreadId].messages[0].payload.headers.To.email[0];
+      if(to == sender){
+        to = $scope.fullThread[$scope.currentThreadId].messages[0].payload.headers.From.email[0];
+      }
+      var emailLine = [];
+      emailLine.push("From: Sellsuki <"+sender+">");
+      emailLine.push("To: "+to);
+      emailLine.push("Subject: "+subject);
+      emailLine.push("");
+      emailLine.push($scope.replyMsg);
+
+      var mail = emailLine.join("\r\n").trim();
+      var base64EncodedEmail = btoa(unescape(encodeURIComponent(mail))).replace(/\+/g, '-').replace(/\//g, '_');
+
+      var requestEmail = gapi.client.gmail.users.messages.send({
+        userId: 'me',
+        resource: {
+          raw: base64EncodedEmail,
+          threadId: threadId
+        }
+      });
+      requestEmail.execute(function(result){
+        $scope.$apply(function(){
+          if(res && !res.error){
+            sendState.alerts(true);
+          }else{
+            sendState.alerts(false);
+          }
+          sendState.isSending(false);
+        });
+      });
+    });
   }
 
   $scope.getFullThreads = function(threadId, callback) {
