@@ -182,7 +182,6 @@ app.controller('readController',['$scope', '$sce', 'sendState', 'inbox', functio
                 body = payload.parts[1].body.data;
             }
           }
-          // console.log(payload);
           body = body.replace(/\-/g, '+').replace(/\_/g, '/');
           message.body = decodeURIComponent(escape(atob(body))).replace(/\n/g,'<br>');
         });
