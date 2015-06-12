@@ -36,7 +36,7 @@ app.controller('appController', ['$scope', '$q', '$modal', 'stateService', 'inbo
 
       angular.forEach(result.threads, function(value, key){
         var defferred = $q.defer();
-        $scope.getThreads(value.id, function(res){
+        inbox.getThread( value.id, 'metadata', ['From', 'To', 'Subject', 'Date'], null, function(res){
           angular.forEach(res.messages, function(value, key){
             $scope.payloadFac(value);
           });
@@ -94,16 +94,6 @@ app.controller('appController', ['$scope', '$q', '$modal', 'stateService', 'inbo
       });
       request.execute(callback);
     }
-  }
-
-  $scope.getThreads = function(threadId, callback) {
-    var request = gapi.client.gmail.users.threads.get({
-      'userId': 'me',
-      'id': threadId,
-      'format': 'metadata',
-      'metadataHeaders': ['From', 'To', 'Subject', 'Date']
-    });
-    request.execute(callback);
   }
 
   $scope.sendMailModal = function(){
@@ -166,7 +156,7 @@ app.controller('readController',['$scope', '$sce', 'stateService', 'inbox', func
     $scope.isRead = true;
     $scope.loadingMessage = true;
     if(typeof currentThread.messages[0].body == 'undefined'){
-      $scope.getFullThreads(currentThread.id, function(result){
+      inbox.getThread(currentThread.id, 'full', [], 'messages(id,payload,raw)', function(result){
         angular.forEach(currentThread.messages, function(message, key){
           var payload = result.messages[key].payload;
           var body = '';
@@ -235,15 +225,7 @@ app.controller('readController',['$scope', '$sce', 'stateService', 'inbox', func
     });
   }
 
-  $scope.getFullThreads = function(threadId, callback) {
-    var request = gapi.client.gmail.users.threads.get({
-      'userId': 'me',
-      'id': threadId,
-      'format': 'full',
-      'fields' : 'messages(id,payload,raw)'
-    });
-    request.execute(callback);
-  }
+
 }]);
 
 angular.module('state', []).factory('stateService', ['$interval', function($interval){
@@ -315,6 +297,16 @@ angular.module('state', []).factory('stateService', ['$interval', function($inte
         }
       });
       requestEmail.execute(callback);
+    },
+    getThread : function(threadId, format, metadataHeaders, fields, callback) {
+      var request = gapi.client.gmail.users.threads.get({
+        'userId': 'me',
+        'id': threadId,
+        'format': format,
+        'metadataHeaders': metadataHeaders,
+        'fields' : fields
+      });
+      request.execute(callback);
     }
   }
 
