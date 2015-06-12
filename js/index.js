@@ -1,11 +1,11 @@
 var app = angular.module('GmailSellsuki', ['ui.bootstrap', 'state', 'ngSanitize']);
-app.controller('appController', ['$scope', '$q', '$modal', 'showState', 'inbox', function($scope, $q, $modal, showState, inbox){
+app.controller('appController', ['$scope', '$q', '$modal', 'stateService', 'inbox', function($scope, $q, $modal, stateService, inbox){
 
   $scope.clientId = '331691048436-q1g7qk6qf50hvg896regfa2pdv0n1q6h.apps.googleusercontent.com';
   $scope.scopes = ['https://mail.google.com/', 'https://www.google.com/m8/feeds'];
   $scope.nextPage = '';
   $scope.threads = inbox.threadList();
-  $scope.inbox = showState.init();
+  $scope.inbox = stateService.init();
 
   $scope.checkAuth = function checkAuth(immediate){
     gapi.auth.authorize({
@@ -18,18 +18,18 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', 'inbox',
   $scope.authResult = function(res){
     $scope.$apply(function(){
       if(res && !res.error){
-        showState.isLogin(true);
-        showState.isLoading(true);
+        stateService.isLogin(true);
+        stateService.isLoading(true);
         gapi.client.load('gmail', 'v1', $scope.createInbox);
       }else{
-        showState.isLogin(false);
+        stateService.isLogin(false);
       }
     });
   }
 
   $scope.createInbox = function(){
 
-    showState.isLoading(true);
+    stateService.isLoading(true);
     $scope.findThreadList( function(result){
 
       var p = [];
@@ -49,13 +49,13 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', 'inbox',
         if(res && !res.error){
           $scope.threads.push.apply($scope.threads, res);
         }
-        showState.isLoading(false);
+        stateService.isLoading(false);
       });
 
       $scope.$apply(function(){
         $scope.nextPage = result.nextPageToken;
         if(typeof $scope.nextPage == 'undefined'){
-          showState.canLoad(false);
+          stateService.canLoad(false);
         }
       });
     });
@@ -116,13 +116,13 @@ app.controller('appController', ['$scope', '$q', '$modal', 'showState', 'inbox',
   }
 }]);
 
-app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', 'inbox', function($scope, $modalInstance, sendState, inbox){
+app.controller('sendEmail', ['$scope', '$modalInstance', 'stateService', 'inbox', function($scope, $modalInstance, stateService, inbox){
 
   $scope.email = this.email;
-  $scope.state = sendState.init();
+  $scope.state = stateService.init();
 
   $scope.sendMail = function(){
-    sendState.isSending(true);
+    stateService.isSending(true);
     var result = gapi.client.gmail.users.getProfile({
       userId : 'me'
     });
@@ -136,11 +136,11 @@ app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', 'inbox', f
   $scope.sendMailResult = function(result){
     $scope.$apply(function(){
       if(result && !result.error){
-        sendState.alerts(true);
+        stateService.alerts(true);
       }else{
-        sendState.alerts(false);
+        stateService.alerts(false);
       }
-      sendState.isSending(false);
+      stateService.isSending(false);
     });
   }
 
@@ -149,12 +149,12 @@ app.controller('sendEmail', ['$scope', '$modalInstance', 'sendState', 'inbox', f
   }
 }]);
 
-app.controller('readController',['$scope', '$sce', 'sendState', 'inbox', function($scope, $sce, sendState, inbox){
+app.controller('readController',['$scope', '$sce', 'stateService', 'inbox', function($scope, $sce, stateService, inbox){
 
   $scope.isRead = false;
   $scope.loadingMessage = false;
   $scope.currentThreadIndex = '';
-  $scope.state = sendState.init();
+  $scope.state = stateService.init();
 
   $scope.trustAsHtml = function(string) {
     return $sce.trustAsHtml(string);
@@ -203,7 +203,7 @@ app.controller('readController',['$scope', '$sce', 'sendState', 'inbox', functio
   }
 
   $scope.reply = function(){
-    sendState.isSending(true);
+    stateService.isSending(true);
     var currentThread = $scope.getThread();
     var tmp = {};
     var threadId = currentThread.id;
@@ -225,13 +225,13 @@ app.controller('readController',['$scope', '$sce', 'sendState', 'inbox', functio
   $scope.sendMailResult = function(result){
     $scope.$apply(function(){
       if(result && !result.error){
-        sendState.alerts(true);
+        stateService.alerts(true);
         $scope.replyMsg = '';
       }else{
-        sendState.alerts(false);
+        stateService.alerts(false);
         $scope.replyMsg = '';
       }
-      sendState.isSending(false);
+      stateService.isSending(false);
     });
   }
 
@@ -246,9 +246,9 @@ app.controller('readController',['$scope', '$sce', 'sendState', 'inbox', functio
   }
 }]);
 
-angular.module('state', []).factory('showState', function(){
+angular.module('state', []).factory('stateService', ['$interval', function($interval){
 
-  var state = { isLogin: false, canLoad: true, loading: [ false, 'Load More']};
+  var state = { isLogin: false, canLoad: true, loading: [ false, 'Load More'], alerts : [], result: {show : false , isComplete : true} , sending: [ false, 'Send']};
 
   return {
     init : function(){
@@ -267,16 +267,6 @@ angular.module('state', []).factory('showState', function(){
       }else{
         state.loading[1] = 'Load More';
       }
-    }
-  }
-
-}).factory('sendState', ['$interval', function($interval){
-
-  var state = { alerts : [], result: {show : false , isComplete : true} , sending: [ false, 'Send']};
-
-  return {
-    init : function(){
-      return state;
     },
     isSending : function(b){
       state.sending[0] = b;
@@ -298,7 +288,7 @@ angular.module('state', []).factory('showState', function(){
     }
   }
 
-}]).factory('inbox', ['sendState', function( sendState ){
+}]).factory('inbox',  function(){
 
   var emailList = [];
 
@@ -328,4 +318,4 @@ angular.module('state', []).factory('showState', function(){
     }
   }
 
-}]);
+});
